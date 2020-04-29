@@ -1,0 +1,5313 @@
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 1
+
+
+   1              		.syntax unified
+   2              		.cpu cortex-m3
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 1
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.thumb
+  14              		.syntax unified
+  15              		.file	"main.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.section	.text.uart_rx_Handler,"ax",%progbits
+  20              		.align	2
+  21              		.global	uart_rx_Handler
+  22              		.thumb
+  23              		.thumb_func
+  24              		.type	uart_rx_Handler, %function
+  25              	uart_rx_Handler:
+  26              	.LFB72:
+  27              		.file 1 "main.c"
+   1:main.c        **** /* ========================================
+   2:main.c        ****  *
+   3:main.c        ****  * Copyright YOUR COMPANY, THE YEAR
+   4:main.c        ****  * All Rights Reserved
+   5:main.c        ****  * UNPUBLISHED, LICENSED SOFTWARE.
+   6:main.c        ****  *
+   7:main.c        ****  * CONFIDENTIAL AND PROPRIETARY INFORMATION
+   8:main.c        ****  * WHICH IS THE PROPERTY OF your company.
+   9:main.c        ****  *
+  10:main.c        ****  * ========================================
+  11:main.c        **** */
+  12:main.c        **** #include "project.h"
+  13:main.c        **** #include "cyapicallbacks.h"
+  14:main.c        **** #include "keypad.h"
+  15:main.c        **** #include "math.h"
+  16:main.c        **** 
+  17:main.c        **** int count=0;
+  18:main.c        **** int countTimesw2=0;
+  19:main.c        **** int countTimesw3=0;
+  20:main.c        **** int countTime=0;
+  21:main.c        **** int ti=10000;
+  22:main.c        **** int taah=30000;
+  23:main.c        **** float vec[100];
+  24:main.c        **** _Bool mode;
+  25:main.c        **** _Bool light;
+  26:main.c        **** _Bool begin=1;
+  27:main.c        **** _Bool rxbegin=0, rxend=0, flag=0;
+  28:main.c        **** char *mot;
+  29:main.c        **** char formmot[8];
+  30:main.c        **** int morsecode[4]={0,0,0,0};
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 2
+
+
+  31:main.c        **** int morseint=0, k=0;
+  32:main.c        **** int morsetottimespace=0;
+  33:main.c        **** uint8 rxData;
+  34:main.c        **** char8 rxData_char;
+  35:main.c        **** struct pair{
+  36:main.c        ****     char let;
+  37:main.c        ****     double num;
+  38:main.c        ****     double num1;
+  39:main.c        **** };
+  40:main.c        **** struct pair semaphore_alphabet[26] = {{'a',0,0},
+  41:main.c        ****   {'b',0,45},
+  42:main.c        ****   {'c',0,90},
+  43:main.c        ****   {'d',0,135},
+  44:main.c        ****   {'e',0,180},
+  45:main.c        ****   {'f',45,0},
+  46:main.c        ****   {'g',45,45},
+  47:main.c        ****   {'h',45,90},
+  48:main.c        ****   {'i',45,135},
+  49:main.c        ****   {'j',45,180},
+  50:main.c        ****   {'k',90,0},
+  51:main.c        ****   {'l',90,45},
+  52:main.c        ****   {'m',90,90},
+  53:main.c        ****   {'n',90,135},
+  54:main.c        ****   {'o',90,180},
+  55:main.c        ****   {'p',135,0},
+  56:main.c        ****   {'q',135,45},
+  57:main.c        ****   {'r',135,90},
+  58:main.c        ****   {'s',135,135},
+  59:main.c        ****   {'t',135,180},
+  60:main.c        ****   {'u',180,0},
+  61:main.c        ****   {'v',180,45},
+  62:main.c        ****   {'w',180,90},
+  63:main.c        ****   {'x',180,135},
+  64:main.c        ****   {'y',180,180},
+  65:main.c        ****   {'z',158,158}};
+  66:main.c        **** 
+  67:main.c        **** void pinsWrite(int value){
+  68:main.c        ****     if (light){
+  69:main.c        ****         value=0;
+  70:main.c        ****     }
+  71:main.c        ****     Pin_1_Write(value);
+  72:main.c        ****     Pin_2_Write(value);
+  73:main.c        ****     Pin_3_Write(value);
+  74:main.c        ****     Pin_4_Write(value);
+  75:main.c        **** }
+  76:main.c        **** 
+  77:main.c        **** void soundPlay(){
+  78:main.c        ****     if (count==99){
+  79:main.c        ****         count=0;
+  80:main.c        ****     }
+  81:main.c        ****     Timer_ReadStatusRegister();
+  82:main.c        ****     VDAC8_1_SetValue(vec[count]*128);
+  83:main.c        ****     count++;
+  84:main.c        **** }
+  85:main.c        **** 
+  86:main.c        **** void morse(char letter){
+  87:main.c        ****     morsecode[0]=0;
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 3
+
+
+  88:main.c        ****     morsecode[1]=0;
+  89:main.c        ****     morsecode[2]=0;
+  90:main.c        ****     morsecode[3]=0;
+  91:main.c        ****     if(letter=='a'){
+  92:main.c        ****         morsecode[0]=ti;
+  93:main.c        ****         morsecode[1]=taah;
+  94:main.c        ****     }
+  95:main.c        ****     else if(letter=='b'){
+  96:main.c        ****         morsecode[0]=taah;
+  97:main.c        ****         morsecode[1]=ti;
+  98:main.c        ****         morsecode[2]=ti;
+  99:main.c        ****         morsecode[3]=ti;
+ 100:main.c        ****     }
+ 101:main.c        ****     else if(letter=='c'){
+ 102:main.c        ****         morsecode[0]=taah;
+ 103:main.c        ****         morsecode[1]=ti;
+ 104:main.c        ****         morsecode[2]=taah;
+ 105:main.c        ****         morsecode[3]=ti;
+ 106:main.c        ****     }
+ 107:main.c        ****     else if(letter=='d'){
+ 108:main.c        ****         morsecode[0]=taah;
+ 109:main.c        ****         morsecode[1]=ti;
+ 110:main.c        ****         morsecode[2]=ti;
+ 111:main.c        ****     }
+ 112:main.c        ****     else if(letter=='e'){
+ 113:main.c        ****         morsecode[0]=ti;
+ 114:main.c        ****     }
+ 115:main.c        ****     else if(letter=='f'){
+ 116:main.c        ****         morsecode[0]=ti;
+ 117:main.c        ****         morsecode[1]=ti;
+ 118:main.c        ****         morsecode[2]=taah;
+ 119:main.c        ****         morsecode[3]=ti;
+ 120:main.c        ****     }
+ 121:main.c        ****     else if(letter=='g'){
+ 122:main.c        ****         morsecode[0]=taah;
+ 123:main.c        ****         morsecode[1]=taah;
+ 124:main.c        ****         morsecode[2]=ti;
+ 125:main.c        ****     }
+ 126:main.c        ****     else if(letter=='h'){
+ 127:main.c        ****         morsecode[0]=ti;
+ 128:main.c        ****         morsecode[1]=ti;
+ 129:main.c        ****         morsecode[2]=ti;
+ 130:main.c        ****         morsecode[3]=ti;
+ 131:main.c        ****     }
+ 132:main.c        ****     else if(letter=='i'){
+ 133:main.c        ****         morsecode[0]=ti;
+ 134:main.c        ****         morsecode[1]=ti;
+ 135:main.c        ****     }
+ 136:main.c        ****     else if(letter=='j'){
+ 137:main.c        ****         morsecode[0]=ti;
+ 138:main.c        ****         morsecode[1]=taah;
+ 139:main.c        ****         morsecode[2]=taah;
+ 140:main.c        ****         morsecode[3]=taah;
+ 141:main.c        ****     }
+ 142:main.c        ****     else if(letter=='k'){
+ 143:main.c        ****         morsecode[0]=taah;
+ 144:main.c        ****         morsecode[1]=ti;
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 4
+
+
+ 145:main.c        ****         morsecode[2]=taah;
+ 146:main.c        ****     }
+ 147:main.c        ****     else if(letter=='l'){
+ 148:main.c        ****         morsecode[0]=ti;
+ 149:main.c        ****         morsecode[1]=taah;
+ 150:main.c        ****         morsecode[2]=ti;
+ 151:main.c        ****         morsecode[3]=ti;
+ 152:main.c        ****     }
+ 153:main.c        ****     else if(letter=='m'){
+ 154:main.c        ****         morsecode[0]=taah;
+ 155:main.c        ****         morsecode[1]=taah;
+ 156:main.c        ****     }
+ 157:main.c        ****     else if(letter=='n'){
+ 158:main.c        ****         morsecode[0]=taah;
+ 159:main.c        ****         morsecode[1]=ti;
+ 160:main.c        ****     }
+ 161:main.c        ****     else if(letter=='o'){
+ 162:main.c        ****         morsecode[0]=taah;
+ 163:main.c        ****         morsecode[1]=taah;
+ 164:main.c        ****         morsecode[2]=taah;
+ 165:main.c        ****     }
+ 166:main.c        ****     else if(letter=='p'){
+ 167:main.c        ****         morsecode[0]=ti;
+ 168:main.c        ****         morsecode[1]=taah;
+ 169:main.c        ****         morsecode[2]=taah;
+ 170:main.c        ****         morsecode[3]=ti;
+ 171:main.c        ****     }
+ 172:main.c        ****     else if(letter=='q'){
+ 173:main.c        ****         morsecode[0]=taah;
+ 174:main.c        ****         morsecode[1]=taah;
+ 175:main.c        ****         morsecode[2]=ti;
+ 176:main.c        ****         morsecode[3]=taah;
+ 177:main.c        ****     }
+ 178:main.c        ****     else if(letter=='r'){
+ 179:main.c        ****         morsecode[0]=ti;
+ 180:main.c        ****         morsecode[1]=taah;
+ 181:main.c        ****         morsecode[2]=ti;
+ 182:main.c        ****     }
+ 183:main.c        ****     else if(letter=='s'){
+ 184:main.c        ****         morsecode[0]=ti;
+ 185:main.c        ****         morsecode[1]=ti;
+ 186:main.c        ****         morsecode[2]=ti;
+ 187:main.c        ****     }
+ 188:main.c        ****     else if(letter=='t'){
+ 189:main.c        ****         morsecode[0]=taah;
+ 190:main.c        ****     }
+ 191:main.c        ****     else if(letter=='u'){
+ 192:main.c        ****         morsecode[0]=ti;
+ 193:main.c        ****         morsecode[1]=ti;
+ 194:main.c        ****         morsecode[2]=taah;
+ 195:main.c        ****     }
+ 196:main.c        ****     else if(letter=='v'){
+ 197:main.c        ****         morsecode[0]=ti;
+ 198:main.c        ****         morsecode[1]=ti;
+ 199:main.c        ****         morsecode[2]=ti;
+ 200:main.c        ****         morsecode[3]=taah;
+ 201:main.c        ****     }
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 5
+
+
+ 202:main.c        ****     else if(letter=='w'){
+ 203:main.c        ****         morsecode[0]=ti;
+ 204:main.c        ****         morsecode[1]=taah;
+ 205:main.c        ****         morsecode[2]=taah;
+ 206:main.c        ****     }
+ 207:main.c        ****     else if(letter=='x'){
+ 208:main.c        ****         morsecode[0]=taah;
+ 209:main.c        ****         morsecode[1]=ti;
+ 210:main.c        ****         morsecode[2]=ti;
+ 211:main.c        ****         morsecode[3]=taah;
+ 212:main.c        ****     }
+ 213:main.c        ****     else if(letter=='y'){
+ 214:main.c        ****         morsecode[0]=taah;
+ 215:main.c        ****         morsecode[1]=ti;
+ 216:main.c        ****         morsecode[2]=taah;
+ 217:main.c        ****         morsecode[3]=taah;
+ 218:main.c        ****     }
+ 219:main.c        ****     else if(letter=='z'){
+ 220:main.c        ****         morsecode[0]=taah;
+ 221:main.c        ****         morsecode[1]=taah;
+ 222:main.c        ****         morsecode[2]=ti;
+ 223:main.c        ****         morsecode[3]=ti;
+ 224:main.c        ****     }
+ 225:main.c        **** }
+ 226:main.c        **** void modifymorsecode(char letter){
+ 227:main.c        ****     morse(letter);
+ 228:main.c        ****     morsecode[1]+=morsecode[0];
+ 229:main.c        ****     morsecode[2]+=morsecode[1];
+ 230:main.c        ****     morsecode[3]+=morsecode[2];
+ 231:main.c        ****     if (morsecode[1]<=morsecode[0]){    morsetottimespace=0;
+ 232:main.c        ****     }else if(morsecode[2]<=morsecode[1]){   morsetottimespace=5000;
+ 233:main.c        ****     }else if(morsecode[3]<=morsecode[2]){   morsetottimespace=10000;
+ 234:main.c        ****     }else { morsetottimespace=15000;}
+ 235:main.c        **** }
+ 236:main.c        **** 
+ 237:main.c        **** CY_ISR( MORSE ){
+ 238:main.c        ****     if (begin){
+ 239:main.c        ****         modifymorsecode(mot[morseint]);
+ 240:main.c        ****         if(morsecode[0]==ti) UART_PutChar('.');
+ 241:main.c        ****         if(morsecode[0]==taah) UART_PutChar('-');
+ 242:main.c        ****         if(morsecode[1]-morsecode[0]==ti) UART_PutChar('.');
+ 243:main.c        ****         if(morsecode[1]-morsecode[0]==taah) UART_PutChar('-');
+ 244:main.c        ****         if(morsecode[2]-morsecode[1]==ti) UART_PutChar('.');
+ 245:main.c        ****         if(morsecode[2]-morsecode[1]==taah) UART_PutChar('-');
+ 246:main.c        ****         if(morsecode[3]-morsecode[2]==ti) UART_PutChar('.');
+ 247:main.c        ****         if(morsecode[3]-morsecode[2]==taah) UART_PutChar('-');
+ 248:main.c        ****         UART_PutChar(' ');
+ 249:main.c        ****         
+ 250:main.c        ****         //if(light){
+ 251:main.c        ****             for (int ba=0; ba<26; ba++){
+ 252:main.c        ****                 if (semaphore_alphabet[ba].let==mot[morseint]){
+ 253:main.c        ****                     PWM_1_WriteCompare2((int)((semaphore_alphabet[ba].num/1.8)+26));
+ 254:main.c        ****                     PWM_1_WriteCompare1((int)((semaphore_alphabet[ba].num1/1.8)+26));
+ 255:main.c        ****                 }
+ 256:main.c        ****             }
+ 257:main.c        ****         
+ 258:main.c        ****         //}
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 6
+
+
+ 259:main.c        ****     }
+ 260:main.c        ****     begin = 0;
+ 261:main.c        ****     
+ 262:main.c        ****     if(countTime>morsetottimespace+morsecode[3]){
+ 263:main.c        ****         Timer_ReadStatusRegister();
+ 264:main.c        ****         if(countTime>morsetottimespace+morsecode[3]+20000){
+ 265:main.c        ****             begin=1;
+ 266:main.c        ****             countTime=0;
+ 267:main.c        ****             morseint++;
+ 268:main.c        ****             if(strlen(mot)==(morseint)){
+ 269:main.c        ****                 morseint=0;
+ 270:main.c        ****                 rxend=1;
+ 271:main.c        ****                 UART_PutChar('\n');
+ 272:main.c        ****                 //memset(formmot, 0, strlen(formmot));
+ 273:main.c        ****                 interrupt_Stop();
+ 274:main.c        ****             }
+ 275:main.c        ****         }
+ 276:main.c        ****     }
+ 277:main.c        ****     else{
+ 278:main.c        ****         if(countTime<morsecode[0] || ((countTime>(morsecode[0]+5000)) && (countTime<morsecode[1]+50
+ 279:main.c        ****             soundPlay();
+ 280:main.c        ****         }
+ 281:main.c        ****         else{
+ 282:main.c        ****             Timer_ReadStatusRegister();
+ 283:main.c        ****         }       
+ 284:main.c        ****     }
+ 285:main.c        ****     countTime++;
+ 286:main.c        **** }
+ 287:main.c        **** 
+ 288:main.c        **** CY_ISR( SW1_Handler ){
+ 289:main.c        ****     soundPlay();
+ 290:main.c        ****     if (!SW1_Read()){
+ 291:main.c        ****         pinsWrite(0);
+ 292:main.c        ****         interrupt_Stop();
+ 293:main.c        ****     }
+ 294:main.c        **** }
+ 295:main.c        **** 
+ 296:main.c        **** CY_ISR( SW2_Handler ){
+ 297:main.c        ****     if (countTimesw2>=5000){
+ 298:main.c        ****         pinsWrite(0);
+ 299:main.c        ****         interrupt_Stop();
+ 300:main.c        ****     }
+ 301:main.c        ****     else{
+ 302:main.c        ****         pinsWrite(1);
+ 303:main.c        ****         soundPlay();
+ 304:main.c        ****         countTimesw2++; //5000*50µs = 250ms
+ 305:main.c        ****     }
+ 306:main.c        **** }
+ 307:main.c        **** 
+ 308:main.c        **** CY_ISR( SW3_Handler ){
+ 309:main.c        ****     if (countTimesw3>=15000){
+ 310:main.c        ****         pinsWrite(0);
+ 311:main.c        ****         interrupt_Stop();
+ 312:main.c        ****     }
+ 313:main.c        ****     else{
+ 314:main.c        ****         pinsWrite(1);
+ 315:main.c        ****         soundPlay();
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 7
+
+
+ 316:main.c        ****         countTimesw3++; //15000*50µs = 750ms
+ 317:main.c        ****     }
+ 318:main.c        **** }
+ 319:main.c        **** 
+ 320:main.c        **** CY_ISR( SW4_Handler ){
+ 321:main.c        ****     soundPlay();
+ 322:main.c        ****     if (!SW1_Read()){
+ 323:main.c        ****         pinsWrite(0);
+ 324:main.c        ****         interrupt_Stop();
+ 325:main.c        ****     }
+ 326:main.c        **** }
+ 327:main.c        **** 
+ 328:main.c        **** CY_ISR ( uart_rx_Handler ) {
+  28              		.loc 1 328 0
+  29              		.cfi_startproc
+  30              		@ args = 0, pretend = 0, frame = 0
+  31              		@ frame_needed = 0, uses_anonymous_args = 0
+  32 0000 38B5     		push	{r3, r4, r5, lr}
+  33              		.cfi_def_cfa_offset 16
+  34              		.cfi_offset 3, -16
+  35              		.cfi_offset 4, -12
+  36              		.cfi_offset 5, -8
+  37              		.cfi_offset 14, -4
+  38              	.L4:
+ 329:main.c        **** uint8_t status = 0;
+ 330:main.c        **** do{
+ 331:main.c        ****     // Checks if no UART Rx errors
+ 332:main.c        ****     status = UART_ReadRxStatus ();
+  39              		.loc 1 332 0
+  40 0002 FFF7FEFF 		bl	UART_ReadRxStatus
+  41              	.LVL0:
+  42 0006 0446     		mov	r4, r0
+  43              	.LVL1:
+ 333:main.c        ****     if (( status & UART_RX_STS_PAR_ERROR ) |
+  44              		.loc 1 333 0
+  45 0008 10F01E0F 		tst	r0, #30
+  46 000c 06D0     		beq	.L2
+ 334:main.c        ****         ( status & UART_RX_STS_STOP_ERROR ) |
+ 335:main.c        ****         ( status & UART_RX_STS_BREAK ) |
+ 336:main.c        ****         ( status & UART_RX_STS_OVERRUN ) ) {
+ 337:main.c        ****     // Parity , framing , break or overrun error
+ 338:main.c        ****     LCD_Position (1 ,0);
+  47              		.loc 1 338 0
+  48 000e 0021     		movs	r1, #0
+  49 0010 0120     		movs	r0, #1
+  50              	.LVL2:
+  51 0012 FFF7FEFF 		bl	LCD_Position
+  52              	.LVL3:
+ 339:main.c        ****     LCD_PrintString (" UART err");
+  53              		.loc 1 339 0
+  54 0016 0E48     		ldr	r0, .L6
+  55 0018 FFF7FEFF 		bl	LCD_PrintString
+  56              	.LVL4:
+  57              	.L2:
+  58 001c 04F02004 		and	r4, r4, #32
+ 340:main.c        ****     }
+ 341:main.c        ****     // Check that rx buffer is not empty and get rx data
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 8
+
+
+ 342:main.c        ****     if ( ( status & UART_RX_STS_FIFO_NOTEMPTY ) != 0){
+  59              		.loc 1 342 0
+  60 0020 04F0FF05 		and	r5, r4, #255
+  61 0024 8CB1     		cbz	r4, .L3
+ 343:main.c        ****         
+ 344:main.c        ****         rxData = UART_ReadRxData ();
+  62              		.loc 1 344 0
+  63 0026 FFF7FEFF 		bl	UART_ReadRxData
+  64              	.LVL5:
+  65 002a 0A4B     		ldr	r3, .L6+4
+  66 002c 1870     		strb	r0, [r3]
+ 345:main.c        ****         rxData_char = rxData+'0';
+  67              		.loc 1 345 0
+  68 002e 00F13001 		add	r1, r0, #48
+  69 0032 094B     		ldr	r3, .L6+8
+  70 0034 1970     		strb	r1, [r3]
+ 346:main.c        ****         formmot[k]=rxData;
+  71              		.loc 1 346 0
+  72 0036 094C     		ldr	r4, .L6+12
+  73 0038 2368     		ldr	r3, [r4]
+  74 003a 0949     		ldr	r1, .L6+16
+  75 003c C854     		strb	r0, [r1, r3]
+ 347:main.c        ****         k++;
+  76              		.loc 1 347 0
+  77 003e 0133     		adds	r3, r3, #1
+  78 0040 2360     		str	r3, [r4]
+ 348:main.c        ****         LCD_PutChar(rxData);
+  79              		.loc 1 348 0
+  80 0042 FFF7FEFF 		bl	LCD_PutChar
+  81              	.LVL6:
+ 349:main.c        ****         rxbegin=1;
+  82              		.loc 1 349 0
+  83 0046 0123     		movs	r3, #1
+  84 0048 2371     		strb	r3, [r4, #4]
+  85              	.L3:
+ 350:main.c        ****     }
+ 351:main.c        **** } while (( status & UART_RX_STS_FIFO_NOTEMPTY ) != 0);
+  86              		.loc 1 351 0
+  87 004a 002D     		cmp	r5, #0
+  88 004c D9D1     		bne	.L4
+ 352:main.c        **** }
+  89              		.loc 1 352 0
+  90 004e 38BD     		pop	{r3, r4, r5, pc}
+  91              	.L7:
+  92              		.align	2
+  93              	.L6:
+  94 0050 00000000 		.word	.LC0
+  95 0054 00000000 		.word	rxData
+  96 0058 00000000 		.word	rxData_char
+  97 005c 00000000 		.word	.LANCHOR0
+  98 0060 00000000 		.word	formmot
+  99              		.cfi_endproc
+ 100              	.LFE72:
+ 101              		.size	uart_rx_Handler, .-uart_rx_Handler
+ 102              		.section	.text.pinsWrite,"ax",%progbits
+ 103              		.align	2
+ 104              		.global	pinsWrite
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 9
+
+
+ 105              		.thumb
+ 106              		.thumb_func
+ 107              		.type	pinsWrite, %function
+ 108              	pinsWrite:
+ 109              	.LFB63:
+  67:main.c        ****     if (light){
+ 110              		.loc 1 67 0
+ 111              		.cfi_startproc
+ 112              		@ args = 0, pretend = 0, frame = 0
+ 113              		@ frame_needed = 0, uses_anonymous_args = 0
+ 114              	.LVL7:
+ 115 0000 10B5     		push	{r4, lr}
+ 116              		.cfi_def_cfa_offset 8
+ 117              		.cfi_offset 4, -8
+ 118              		.cfi_offset 14, -4
+  68:main.c        ****         value=0;
+ 119              		.loc 1 68 0
+ 120 0002 094B     		ldr	r3, .L12
+ 121 0004 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 122 0006 03B1     		cbz	r3, .L9
+  69:main.c        ****     }
+ 123              		.loc 1 69 0
+ 124 0008 0020     		movs	r0, #0
+ 125              	.LVL8:
+ 126              	.L9:
+  71:main.c        ****     Pin_2_Write(value);
+ 127              		.loc 1 71 0
+ 128 000a C4B2     		uxtb	r4, r0
+ 129 000c 2046     		mov	r0, r4
+ 130              	.LVL9:
+ 131 000e FFF7FEFF 		bl	Pin_1_Write
+ 132              	.LVL10:
+  72:main.c        ****     Pin_3_Write(value);
+ 133              		.loc 1 72 0
+ 134 0012 2046     		mov	r0, r4
+ 135 0014 FFF7FEFF 		bl	Pin_2_Write
+ 136              	.LVL11:
+  73:main.c        ****     Pin_4_Write(value);
+ 137              		.loc 1 73 0
+ 138 0018 2046     		mov	r0, r4
+ 139 001a FFF7FEFF 		bl	Pin_3_Write
+ 140              	.LVL12:
+  74:main.c        **** }
+ 141              		.loc 1 74 0
+ 142 001e 2046     		mov	r0, r4
+ 143 0020 FFF7FEFF 		bl	Pin_4_Write
+ 144              	.LVL13:
+ 145 0024 10BD     		pop	{r4, pc}
+ 146              	.L13:
+ 147 0026 00BF     		.align	2
+ 148              	.L12:
+ 149 0028 00000000 		.word	light
+ 150              		.cfi_endproc
+ 151              	.LFE63:
+ 152              		.size	pinsWrite, .-pinsWrite
+ 153              		.global	__aeabi_fmul
+ 154              		.global	__aeabi_f2uiz
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 10
+
+
+ 155              		.section	.text.soundPlay,"ax",%progbits
+ 156              		.align	2
+ 157              		.global	soundPlay
+ 158              		.thumb
+ 159              		.thumb_func
+ 160              		.type	soundPlay, %function
+ 161              	soundPlay:
+ 162              	.LFB64:
+  77:main.c        ****     if (count==99){
+ 163              		.loc 1 77 0
+ 164              		.cfi_startproc
+ 165              		@ args = 0, pretend = 0, frame = 0
+ 166              		@ frame_needed = 0, uses_anonymous_args = 0
+ 167 0000 10B5     		push	{r4, lr}
+ 168              		.cfi_def_cfa_offset 8
+ 169              		.cfi_offset 4, -8
+ 170              		.cfi_offset 14, -4
+  78:main.c        ****         count=0;
+ 171              		.loc 1 78 0
+ 172 0002 0D4B     		ldr	r3, .L17
+ 173 0004 9B68     		ldr	r3, [r3, #8]
+ 174 0006 632B     		cmp	r3, #99
+ 175 0008 02D1     		bne	.L15
+  79:main.c        ****     }
+ 176              		.loc 1 79 0
+ 177 000a 0022     		movs	r2, #0
+ 178 000c 0A4B     		ldr	r3, .L17
+ 179 000e 9A60     		str	r2, [r3, #8]
+ 180              	.L15:
+  81:main.c        ****     VDAC8_1_SetValue(vec[count]*128);
+ 181              		.loc 1 81 0
+ 182 0010 FFF7FEFF 		bl	Timer_ReadStatusRegister
+ 183              	.LVL14:
+  82:main.c        ****     count++;
+ 184              		.loc 1 82 0
+ 185 0014 084C     		ldr	r4, .L17
+ 186 0016 A268     		ldr	r2, [r4, #8]
+ 187 0018 4FF08641 		mov	r1, #1124073472
+ 188 001c 074B     		ldr	r3, .L17+4
+ 189 001e 53F82200 		ldr	r0, [r3, r2, lsl #2]	@ float
+ 190 0022 FFF7FEFF 		bl	__aeabi_fmul
+ 191              	.LVL15:
+ 192 0026 FFF7FEFF 		bl	__aeabi_f2uiz
+ 193              	.LVL16:
+ 194 002a C0B2     		uxtb	r0, r0
+ 195 002c FFF7FEFF 		bl	VDAC8_1_SetValue
+ 196              	.LVL17:
+  83:main.c        **** }
+ 197              		.loc 1 83 0
+ 198 0030 A368     		ldr	r3, [r4, #8]
+ 199 0032 0133     		adds	r3, r3, #1
+ 200 0034 A360     		str	r3, [r4, #8]
+ 201 0036 10BD     		pop	{r4, pc}
+ 202              	.L18:
+ 203              		.align	2
+ 204              	.L17:
+ 205 0038 00000000 		.word	.LANCHOR0
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 11
+
+
+ 206 003c 00000000 		.word	vec
+ 207              		.cfi_endproc
+ 208              	.LFE64:
+ 209              		.size	soundPlay, .-soundPlay
+ 210              		.section	.text.SW1_Handler,"ax",%progbits
+ 211              		.align	2
+ 212              		.global	SW1_Handler
+ 213              		.thumb
+ 214              		.thumb_func
+ 215              		.type	SW1_Handler, %function
+ 216              	SW1_Handler:
+ 217              	.LFB68:
+ 288:main.c        ****     soundPlay();
+ 218              		.loc 1 288 0
+ 219              		.cfi_startproc
+ 220              		@ args = 0, pretend = 0, frame = 0
+ 221              		@ frame_needed = 0, uses_anonymous_args = 0
+ 222 0000 08B5     		push	{r3, lr}
+ 223              		.cfi_def_cfa_offset 8
+ 224              		.cfi_offset 3, -8
+ 225              		.cfi_offset 14, -4
+ 289:main.c        ****     if (!SW1_Read()){
+ 226              		.loc 1 289 0
+ 227 0002 FFF7FEFF 		bl	soundPlay
+ 228              	.LVL18:
+ 290:main.c        ****         pinsWrite(0);
+ 229              		.loc 1 290 0
+ 230 0006 FFF7FEFF 		bl	SW1_Read
+ 231              	.LVL19:
+ 232 000a 18B9     		cbnz	r0, .L19
+ 291:main.c        ****         interrupt_Stop();
+ 233              		.loc 1 291 0
+ 234 000c FFF7FEFF 		bl	pinsWrite
+ 235              	.LVL20:
+ 292:main.c        ****     }
+ 236              		.loc 1 292 0
+ 237 0010 FFF7FEFF 		bl	interrupt_Stop
+ 238              	.LVL21:
+ 239              	.L19:
+ 240 0014 08BD     		pop	{r3, pc}
+ 241              		.cfi_endproc
+ 242              	.LFE68:
+ 243              		.size	SW1_Handler, .-SW1_Handler
+ 244 0016 00BF     		.section	.text.SW2_Handler,"ax",%progbits
+ 245              		.align	2
+ 246              		.global	SW2_Handler
+ 247              		.thumb
+ 248              		.thumb_func
+ 249              		.type	SW2_Handler, %function
+ 250              	SW2_Handler:
+ 251              	.LFB69:
+ 296:main.c        ****     if (countTimesw2>=5000){
+ 252              		.loc 1 296 0
+ 253              		.cfi_startproc
+ 254              		@ args = 0, pretend = 0, frame = 0
+ 255              		@ frame_needed = 0, uses_anonymous_args = 0
+ 256 0000 08B5     		push	{r3, lr}
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 12
+
+
+ 257              		.cfi_def_cfa_offset 8
+ 258              		.cfi_offset 3, -8
+ 259              		.cfi_offset 14, -4
+ 297:main.c        ****         pinsWrite(0);
+ 260              		.loc 1 297 0
+ 261 0002 0B4B     		ldr	r3, .L26
+ 262 0004 DA68     		ldr	r2, [r3, #12]
+ 263 0006 41F28733 		movw	r3, #4999
+ 264 000a 9A42     		cmp	r2, r3
+ 265 000c 05DD     		ble	.L23
+ 298:main.c        ****         interrupt_Stop();
+ 266              		.loc 1 298 0
+ 267 000e 0020     		movs	r0, #0
+ 268 0010 FFF7FEFF 		bl	pinsWrite
+ 269              	.LVL22:
+ 299:main.c        ****     }
+ 270              		.loc 1 299 0
+ 271 0014 FFF7FEFF 		bl	interrupt_Stop
+ 272              	.LVL23:
+ 273 0018 08BD     		pop	{r3, pc}
+ 274              	.L23:
+ 302:main.c        ****         soundPlay();
+ 275              		.loc 1 302 0
+ 276 001a 0120     		movs	r0, #1
+ 277 001c FFF7FEFF 		bl	pinsWrite
+ 278              	.LVL24:
+ 303:main.c        ****         countTimesw2++; //5000*50µs = 250ms
+ 279              		.loc 1 303 0
+ 280 0020 FFF7FEFF 		bl	soundPlay
+ 281              	.LVL25:
+ 304:main.c        ****     }
+ 282              		.loc 1 304 0
+ 283 0024 024A     		ldr	r2, .L26
+ 284 0026 D368     		ldr	r3, [r2, #12]
+ 285 0028 0133     		adds	r3, r3, #1
+ 286 002a D360     		str	r3, [r2, #12]
+ 287 002c 08BD     		pop	{r3, pc}
+ 288              	.L27:
+ 289 002e 00BF     		.align	2
+ 290              	.L26:
+ 291 0030 00000000 		.word	.LANCHOR0
+ 292              		.cfi_endproc
+ 293              	.LFE69:
+ 294              		.size	SW2_Handler, .-SW2_Handler
+ 295              		.section	.text.SW3_Handler,"ax",%progbits
+ 296              		.align	2
+ 297              		.global	SW3_Handler
+ 298              		.thumb
+ 299              		.thumb_func
+ 300              		.type	SW3_Handler, %function
+ 301              	SW3_Handler:
+ 302              	.LFB70:
+ 308:main.c        ****     if (countTimesw3>=15000){
+ 303              		.loc 1 308 0
+ 304              		.cfi_startproc
+ 305              		@ args = 0, pretend = 0, frame = 0
+ 306              		@ frame_needed = 0, uses_anonymous_args = 0
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 13
+
+
+ 307 0000 08B5     		push	{r3, lr}
+ 308              		.cfi_def_cfa_offset 8
+ 309              		.cfi_offset 3, -8
+ 310              		.cfi_offset 14, -4
+ 309:main.c        ****         pinsWrite(0);
+ 311              		.loc 1 309 0
+ 312 0002 0B4B     		ldr	r3, .L32
+ 313 0004 1A69     		ldr	r2, [r3, #16]
+ 314 0006 43F69723 		movw	r3, #14999
+ 315 000a 9A42     		cmp	r2, r3
+ 316 000c 05DD     		ble	.L29
+ 310:main.c        ****         interrupt_Stop();
+ 317              		.loc 1 310 0
+ 318 000e 0020     		movs	r0, #0
+ 319 0010 FFF7FEFF 		bl	pinsWrite
+ 320              	.LVL26:
+ 311:main.c        ****     }
+ 321              		.loc 1 311 0
+ 322 0014 FFF7FEFF 		bl	interrupt_Stop
+ 323              	.LVL27:
+ 324 0018 08BD     		pop	{r3, pc}
+ 325              	.L29:
+ 314:main.c        ****         soundPlay();
+ 326              		.loc 1 314 0
+ 327 001a 0120     		movs	r0, #1
+ 328 001c FFF7FEFF 		bl	pinsWrite
+ 329              	.LVL28:
+ 315:main.c        ****         countTimesw3++; //15000*50µs = 750ms
+ 330              		.loc 1 315 0
+ 331 0020 FFF7FEFF 		bl	soundPlay
+ 332              	.LVL29:
+ 316:main.c        ****     }
+ 333              		.loc 1 316 0
+ 334 0024 024A     		ldr	r2, .L32
+ 335 0026 1369     		ldr	r3, [r2, #16]
+ 336 0028 0133     		adds	r3, r3, #1
+ 337 002a 1361     		str	r3, [r2, #16]
+ 338 002c 08BD     		pop	{r3, pc}
+ 339              	.L33:
+ 340 002e 00BF     		.align	2
+ 341              	.L32:
+ 342 0030 00000000 		.word	.LANCHOR0
+ 343              		.cfi_endproc
+ 344              	.LFE70:
+ 345              		.size	SW3_Handler, .-SW3_Handler
+ 346              		.section	.text.morse,"ax",%progbits
+ 347              		.align	2
+ 348              		.global	morse
+ 349              		.thumb
+ 350              		.thumb_func
+ 351              		.type	morse, %function
+ 352              	morse:
+ 353              	.LFB65:
+  86:main.c        ****     morsecode[0]=0;
+ 354              		.loc 1 86 0
+ 355              		.cfi_startproc
+ 356              		@ args = 0, pretend = 0, frame = 0
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 14
+
+
+ 357              		@ frame_needed = 0, uses_anonymous_args = 0
+ 358              		@ link register save eliminated.
+ 359              	.LVL30:
+  87:main.c        ****     morsecode[1]=0;
+ 360              		.loc 1 87 0
+ 361 0000 824B     		ldr	r3, .L61
+ 362 0002 0022     		movs	r2, #0
+ 363 0004 5A61     		str	r2, [r3, #20]
+  88:main.c        ****     morsecode[2]=0;
+ 364              		.loc 1 88 0
+ 365 0006 9A61     		str	r2, [r3, #24]
+  89:main.c        ****     morsecode[3]=0;
+ 366              		.loc 1 89 0
+ 367 0008 DA61     		str	r2, [r3, #28]
+  90:main.c        ****     if(letter=='a'){
+ 368              		.loc 1 90 0
+ 369 000a 1A62     		str	r2, [r3, #32]
+  91:main.c        ****         morsecode[0]=ti;
+ 370              		.loc 1 91 0
+ 371 000c 6128     		cmp	r0, #97
+ 372 000e 05D1     		bne	.L35
+  92:main.c        ****         morsecode[1]=taah;
+ 373              		.loc 1 92 0
+ 374 0010 7F4A     		ldr	r2, .L61+4
+ 375 0012 1168     		ldr	r1, [r2]
+ 376 0014 5961     		str	r1, [r3, #20]
+  93:main.c        ****     }
+ 377              		.loc 1 93 0
+ 378 0016 5268     		ldr	r2, [r2, #4]
+ 379 0018 9A61     		str	r2, [r3, #24]
+ 380 001a 7047     		bx	lr
+ 381              	.L35:
+  95:main.c        ****         morsecode[0]=taah;
+ 382              		.loc 1 95 0
+ 383 001c 6228     		cmp	r0, #98
+ 384 001e 08D1     		bne	.L37
+  96:main.c        ****         morsecode[1]=ti;
+ 385              		.loc 1 96 0
+ 386 0020 7A4B     		ldr	r3, .L61
+ 387 0022 7B4A     		ldr	r2, .L61+4
+ 388 0024 5168     		ldr	r1, [r2, #4]
+ 389 0026 5961     		str	r1, [r3, #20]
+  97:main.c        ****         morsecode[2]=ti;
+ 390              		.loc 1 97 0
+ 391 0028 1268     		ldr	r2, [r2]
+ 392 002a 9A61     		str	r2, [r3, #24]
+  98:main.c        ****         morsecode[3]=ti;
+ 393              		.loc 1 98 0
+ 394 002c DA61     		str	r2, [r3, #28]
+  99:main.c        ****     }
+ 395              		.loc 1 99 0
+ 396 002e 1A62     		str	r2, [r3, #32]
+ 397 0030 7047     		bx	lr
+ 398              	.L37:
+ 101:main.c        ****         morsecode[0]=taah;
+ 399              		.loc 1 101 0
+ 400 0032 6328     		cmp	r0, #99
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 15
+
+
+ 401 0034 08D1     		bne	.L38
+ 102:main.c        ****         morsecode[1]=ti;
+ 402              		.loc 1 102 0
+ 403 0036 764A     		ldr	r2, .L61+4
+ 404 0038 5168     		ldr	r1, [r2, #4]
+ 405 003a 744B     		ldr	r3, .L61
+ 406 003c 5961     		str	r1, [r3, #20]
+ 103:main.c        ****         morsecode[2]=taah;
+ 407              		.loc 1 103 0
+ 408 003e 1268     		ldr	r2, [r2]
+ 409 0040 9A61     		str	r2, [r3, #24]
+ 104:main.c        ****         morsecode[3]=ti;
+ 410              		.loc 1 104 0
+ 411 0042 D961     		str	r1, [r3, #28]
+ 105:main.c        ****     }
+ 412              		.loc 1 105 0
+ 413 0044 1A62     		str	r2, [r3, #32]
+ 414 0046 7047     		bx	lr
+ 415              	.L38:
+ 107:main.c        ****         morsecode[0]=taah;
+ 416              		.loc 1 107 0
+ 417 0048 6428     		cmp	r0, #100
+ 418 004a 07D1     		bne	.L39
+ 108:main.c        ****         morsecode[1]=ti;
+ 419              		.loc 1 108 0
+ 420 004c 6F4B     		ldr	r3, .L61
+ 421 004e 704A     		ldr	r2, .L61+4
+ 422 0050 5168     		ldr	r1, [r2, #4]
+ 423 0052 5961     		str	r1, [r3, #20]
+ 109:main.c        ****         morsecode[2]=ti;
+ 424              		.loc 1 109 0
+ 425 0054 1268     		ldr	r2, [r2]
+ 426 0056 9A61     		str	r2, [r3, #24]
+ 110:main.c        ****     }
+ 427              		.loc 1 110 0
+ 428 0058 DA61     		str	r2, [r3, #28]
+ 429 005a 7047     		bx	lr
+ 430              	.L39:
+ 112:main.c        ****         morsecode[0]=ti;
+ 431              		.loc 1 112 0
+ 432 005c 6528     		cmp	r0, #101
+ 433 005e 04D1     		bne	.L40
+ 113:main.c        ****     }
+ 434              		.loc 1 113 0
+ 435 0060 6B4B     		ldr	r3, .L61+4
+ 436 0062 1A68     		ldr	r2, [r3]
+ 437 0064 694B     		ldr	r3, .L61
+ 438 0066 5A61     		str	r2, [r3, #20]
+ 439 0068 7047     		bx	lr
+ 440              	.L40:
+ 115:main.c        ****         morsecode[0]=ti;
+ 441              		.loc 1 115 0
+ 442 006a 6628     		cmp	r0, #102
+ 443 006c 08D1     		bne	.L41
+ 116:main.c        ****         morsecode[1]=ti;
+ 444              		.loc 1 116 0
+ 445 006e 6849     		ldr	r1, .L61+4
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 16
+
+
+ 446 0070 0A68     		ldr	r2, [r1]
+ 447 0072 664B     		ldr	r3, .L61
+ 448 0074 5A61     		str	r2, [r3, #20]
+ 117:main.c        ****         morsecode[2]=taah;
+ 449              		.loc 1 117 0
+ 450 0076 9A61     		str	r2, [r3, #24]
+ 118:main.c        ****         morsecode[3]=ti;
+ 451              		.loc 1 118 0
+ 452 0078 4968     		ldr	r1, [r1, #4]
+ 453 007a D961     		str	r1, [r3, #28]
+ 119:main.c        ****     }
+ 454              		.loc 1 119 0
+ 455 007c 1A62     		str	r2, [r3, #32]
+ 456 007e 7047     		bx	lr
+ 457              	.L41:
+ 121:main.c        ****         morsecode[0]=taah;
+ 458              		.loc 1 121 0
+ 459 0080 6728     		cmp	r0, #103
+ 460 0082 07D1     		bne	.L42
+ 122:main.c        ****         morsecode[1]=taah;
+ 461              		.loc 1 122 0
+ 462 0084 624A     		ldr	r2, .L61+4
+ 463 0086 5168     		ldr	r1, [r2, #4]
+ 464 0088 604B     		ldr	r3, .L61
+ 465 008a 5961     		str	r1, [r3, #20]
+ 123:main.c        ****         morsecode[2]=ti;
+ 466              		.loc 1 123 0
+ 467 008c 9961     		str	r1, [r3, #24]
+ 124:main.c        ****     }
+ 468              		.loc 1 124 0
+ 469 008e 1268     		ldr	r2, [r2]
+ 470 0090 DA61     		str	r2, [r3, #28]
+ 471 0092 7047     		bx	lr
+ 472              	.L42:
+ 126:main.c        ****         morsecode[0]=ti;
+ 473              		.loc 1 126 0
+ 474 0094 6828     		cmp	r0, #104
+ 475 0096 07D1     		bne	.L43
+ 127:main.c        ****         morsecode[1]=ti;
+ 476              		.loc 1 127 0
+ 477 0098 5D4B     		ldr	r3, .L61+4
+ 478 009a 1A68     		ldr	r2, [r3]
+ 479 009c 5B4B     		ldr	r3, .L61
+ 480 009e 5A61     		str	r2, [r3, #20]
+ 128:main.c        ****         morsecode[2]=ti;
+ 481              		.loc 1 128 0
+ 482 00a0 9A61     		str	r2, [r3, #24]
+ 129:main.c        ****         morsecode[3]=ti;
+ 483              		.loc 1 129 0
+ 484 00a2 DA61     		str	r2, [r3, #28]
+ 130:main.c        ****     }
+ 485              		.loc 1 130 0
+ 486 00a4 1A62     		str	r2, [r3, #32]
+ 487 00a6 7047     		bx	lr
+ 488              	.L43:
+ 132:main.c        ****         morsecode[0]=ti;
+ 489              		.loc 1 132 0
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 17
+
+
+ 490 00a8 6928     		cmp	r0, #105
+ 491 00aa 05D1     		bne	.L44
+ 133:main.c        ****         morsecode[1]=ti;
+ 492              		.loc 1 133 0
+ 493 00ac 584B     		ldr	r3, .L61+4
+ 494 00ae 1A68     		ldr	r2, [r3]
+ 495 00b0 564B     		ldr	r3, .L61
+ 496 00b2 5A61     		str	r2, [r3, #20]
+ 134:main.c        ****     }
+ 497              		.loc 1 134 0
+ 498 00b4 9A61     		str	r2, [r3, #24]
+ 499 00b6 7047     		bx	lr
+ 500              	.L44:
+ 136:main.c        ****         morsecode[0]=ti;
+ 501              		.loc 1 136 0
+ 502 00b8 6A28     		cmp	r0, #106
+ 503 00ba 08D1     		bne	.L45
+ 137:main.c        ****         morsecode[1]=taah;
+ 504              		.loc 1 137 0
+ 505 00bc 534B     		ldr	r3, .L61
+ 506 00be 544A     		ldr	r2, .L61+4
+ 507 00c0 1168     		ldr	r1, [r2]
+ 508 00c2 5961     		str	r1, [r3, #20]
+ 138:main.c        ****         morsecode[2]=taah;
+ 509              		.loc 1 138 0
+ 510 00c4 5268     		ldr	r2, [r2, #4]
+ 511 00c6 9A61     		str	r2, [r3, #24]
+ 139:main.c        ****         morsecode[3]=taah;
+ 512              		.loc 1 139 0
+ 513 00c8 DA61     		str	r2, [r3, #28]
+ 140:main.c        ****     }
+ 514              		.loc 1 140 0
+ 515 00ca 1A62     		str	r2, [r3, #32]
+ 516 00cc 7047     		bx	lr
+ 517              	.L45:
+ 142:main.c        ****         morsecode[0]=taah;
+ 518              		.loc 1 142 0
+ 519 00ce 6B28     		cmp	r0, #107
+ 520 00d0 07D1     		bne	.L46
+ 143:main.c        ****         morsecode[1]=ti;
+ 521              		.loc 1 143 0
+ 522 00d2 4F49     		ldr	r1, .L61+4
+ 523 00d4 4A68     		ldr	r2, [r1, #4]
+ 524 00d6 4D4B     		ldr	r3, .L61
+ 525 00d8 5A61     		str	r2, [r3, #20]
+ 144:main.c        ****         morsecode[2]=taah;
+ 526              		.loc 1 144 0
+ 527 00da 0968     		ldr	r1, [r1]
+ 528 00dc 9961     		str	r1, [r3, #24]
+ 145:main.c        ****     }
+ 529              		.loc 1 145 0
+ 530 00de DA61     		str	r2, [r3, #28]
+ 531 00e0 7047     		bx	lr
+ 532              	.L46:
+ 147:main.c        ****         morsecode[0]=ti;
+ 533              		.loc 1 147 0
+ 534 00e2 6C28     		cmp	r0, #108
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 18
+
+
+ 535 00e4 08D1     		bne	.L47
+ 148:main.c        ****         morsecode[1]=taah;
+ 536              		.loc 1 148 0
+ 537 00e6 4A49     		ldr	r1, .L61+4
+ 538 00e8 0A68     		ldr	r2, [r1]
+ 539 00ea 484B     		ldr	r3, .L61
+ 540 00ec 5A61     		str	r2, [r3, #20]
+ 149:main.c        ****         morsecode[2]=ti;
+ 541              		.loc 1 149 0
+ 542 00ee 4968     		ldr	r1, [r1, #4]
+ 543 00f0 9961     		str	r1, [r3, #24]
+ 150:main.c        ****         morsecode[3]=ti;
+ 544              		.loc 1 150 0
+ 545 00f2 DA61     		str	r2, [r3, #28]
+ 151:main.c        ****     }
+ 546              		.loc 1 151 0
+ 547 00f4 1A62     		str	r2, [r3, #32]
+ 548 00f6 7047     		bx	lr
+ 549              	.L47:
+ 153:main.c        ****         morsecode[0]=taah;
+ 550              		.loc 1 153 0
+ 551 00f8 6D28     		cmp	r0, #109
+ 552 00fa 05D1     		bne	.L48
+ 154:main.c        ****         morsecode[1]=taah;
+ 553              		.loc 1 154 0
+ 554 00fc 444B     		ldr	r3, .L61+4
+ 555 00fe 5A68     		ldr	r2, [r3, #4]
+ 556 0100 424B     		ldr	r3, .L61
+ 557 0102 5A61     		str	r2, [r3, #20]
+ 155:main.c        ****     }
+ 558              		.loc 1 155 0
+ 559 0104 9A61     		str	r2, [r3, #24]
+ 560 0106 7047     		bx	lr
+ 561              	.L48:
+ 157:main.c        ****         morsecode[0]=taah;
+ 562              		.loc 1 157 0
+ 563 0108 6E28     		cmp	r0, #110
+ 564 010a 06D1     		bne	.L49
+ 158:main.c        ****         morsecode[1]=ti;
+ 565              		.loc 1 158 0
+ 566 010c 3F4B     		ldr	r3, .L61
+ 567 010e 404A     		ldr	r2, .L61+4
+ 568 0110 5168     		ldr	r1, [r2, #4]
+ 569 0112 5961     		str	r1, [r3, #20]
+ 159:main.c        ****     }
+ 570              		.loc 1 159 0
+ 571 0114 1268     		ldr	r2, [r2]
+ 572 0116 9A61     		str	r2, [r3, #24]
+ 573 0118 7047     		bx	lr
+ 574              	.L49:
+ 161:main.c        ****         morsecode[0]=taah;
+ 575              		.loc 1 161 0
+ 576 011a 6F28     		cmp	r0, #111
+ 577 011c 06D1     		bne	.L50
+ 162:main.c        ****         morsecode[1]=taah;
+ 578              		.loc 1 162 0
+ 579 011e 3C4B     		ldr	r3, .L61+4
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 19
+
+
+ 580 0120 5A68     		ldr	r2, [r3, #4]
+ 581 0122 3A4B     		ldr	r3, .L61
+ 582 0124 5A61     		str	r2, [r3, #20]
+ 163:main.c        ****         morsecode[2]=taah;
+ 583              		.loc 1 163 0
+ 584 0126 9A61     		str	r2, [r3, #24]
+ 164:main.c        ****     }
+ 585              		.loc 1 164 0
+ 586 0128 DA61     		str	r2, [r3, #28]
+ 587 012a 7047     		bx	lr
+ 588              	.L50:
+ 166:main.c        ****         morsecode[0]=ti;
+ 589              		.loc 1 166 0
+ 590 012c 7028     		cmp	r0, #112
+ 591 012e 08D1     		bne	.L51
+ 167:main.c        ****         morsecode[1]=taah;
+ 592              		.loc 1 167 0
+ 593 0130 3749     		ldr	r1, .L61+4
+ 594 0132 0A68     		ldr	r2, [r1]
+ 595 0134 354B     		ldr	r3, .L61
+ 596 0136 5A61     		str	r2, [r3, #20]
+ 168:main.c        ****         morsecode[2]=taah;
+ 597              		.loc 1 168 0
+ 598 0138 4968     		ldr	r1, [r1, #4]
+ 599 013a 9961     		str	r1, [r3, #24]
+ 169:main.c        ****         morsecode[3]=ti;
+ 600              		.loc 1 169 0
+ 601 013c D961     		str	r1, [r3, #28]
+ 170:main.c        ****     }
+ 602              		.loc 1 170 0
+ 603 013e 1A62     		str	r2, [r3, #32]
+ 604 0140 7047     		bx	lr
+ 605              	.L51:
+ 172:main.c        ****         morsecode[0]=taah;
+ 606              		.loc 1 172 0
+ 607 0142 7128     		cmp	r0, #113
+ 608 0144 08D1     		bne	.L52
+ 173:main.c        ****         morsecode[1]=taah;
+ 609              		.loc 1 173 0
+ 610 0146 3249     		ldr	r1, .L61+4
+ 611 0148 4A68     		ldr	r2, [r1, #4]
+ 612 014a 304B     		ldr	r3, .L61
+ 613 014c 5A61     		str	r2, [r3, #20]
+ 174:main.c        ****         morsecode[2]=ti;
+ 614              		.loc 1 174 0
+ 615 014e 9A61     		str	r2, [r3, #24]
+ 175:main.c        ****         morsecode[3]=taah;
+ 616              		.loc 1 175 0
+ 617 0150 0968     		ldr	r1, [r1]
+ 618 0152 D961     		str	r1, [r3, #28]
+ 176:main.c        ****     }
+ 619              		.loc 1 176 0
+ 620 0154 1A62     		str	r2, [r3, #32]
+ 621 0156 7047     		bx	lr
+ 622              	.L52:
+ 178:main.c        ****         morsecode[0]=ti;
+ 623              		.loc 1 178 0
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 20
+
+
+ 624 0158 7228     		cmp	r0, #114
+ 625 015a 07D1     		bne	.L53
+ 179:main.c        ****         morsecode[1]=taah;
+ 626              		.loc 1 179 0
+ 627 015c 2C49     		ldr	r1, .L61+4
+ 628 015e 0A68     		ldr	r2, [r1]
+ 629 0160 2A4B     		ldr	r3, .L61
+ 630 0162 5A61     		str	r2, [r3, #20]
+ 180:main.c        ****         morsecode[2]=ti;
+ 631              		.loc 1 180 0
+ 632 0164 4968     		ldr	r1, [r1, #4]
+ 633 0166 9961     		str	r1, [r3, #24]
+ 181:main.c        ****     }
+ 634              		.loc 1 181 0
+ 635 0168 DA61     		str	r2, [r3, #28]
+ 636 016a 7047     		bx	lr
+ 637              	.L53:
+ 183:main.c        ****         morsecode[0]=ti;
+ 638              		.loc 1 183 0
+ 639 016c 7328     		cmp	r0, #115
+ 640 016e 06D1     		bne	.L54
+ 184:main.c        ****         morsecode[1]=ti;
+ 641              		.loc 1 184 0
+ 642 0170 274B     		ldr	r3, .L61+4
+ 643 0172 1A68     		ldr	r2, [r3]
+ 644 0174 254B     		ldr	r3, .L61
+ 645 0176 5A61     		str	r2, [r3, #20]
+ 185:main.c        ****         morsecode[2]=ti;
+ 646              		.loc 1 185 0
+ 647 0178 9A61     		str	r2, [r3, #24]
+ 186:main.c        ****     }
+ 648              		.loc 1 186 0
+ 649 017a DA61     		str	r2, [r3, #28]
+ 650 017c 7047     		bx	lr
+ 651              	.L54:
+ 188:main.c        ****         morsecode[0]=taah;
+ 652              		.loc 1 188 0
+ 653 017e 7428     		cmp	r0, #116
+ 654 0180 04D1     		bne	.L55
+ 189:main.c        ****     }
+ 655              		.loc 1 189 0
+ 656 0182 234B     		ldr	r3, .L61+4
+ 657 0184 5A68     		ldr	r2, [r3, #4]
+ 658 0186 214B     		ldr	r3, .L61
+ 659 0188 5A61     		str	r2, [r3, #20]
+ 660 018a 7047     		bx	lr
+ 661              	.L55:
+ 191:main.c        ****         morsecode[0]=ti;
+ 662              		.loc 1 191 0
+ 663 018c 7528     		cmp	r0, #117
+ 664 018e 07D1     		bne	.L56
+ 192:main.c        ****         morsecode[1]=ti;
+ 665              		.loc 1 192 0
+ 666 0190 1F4A     		ldr	r2, .L61+4
+ 667 0192 1168     		ldr	r1, [r2]
+ 668 0194 1D4B     		ldr	r3, .L61
+ 669 0196 5961     		str	r1, [r3, #20]
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 21
+
+
+ 193:main.c        ****         morsecode[2]=taah;
+ 670              		.loc 1 193 0
+ 671 0198 9961     		str	r1, [r3, #24]
+ 194:main.c        ****     }
+ 672              		.loc 1 194 0
+ 673 019a 5268     		ldr	r2, [r2, #4]
+ 674 019c DA61     		str	r2, [r3, #28]
+ 675 019e 7047     		bx	lr
+ 676              	.L56:
+ 196:main.c        ****         morsecode[0]=ti;
+ 677              		.loc 1 196 0
+ 678 01a0 7628     		cmp	r0, #118
+ 679 01a2 08D1     		bne	.L57
+ 197:main.c        ****         morsecode[1]=ti;
+ 680              		.loc 1 197 0
+ 681 01a4 1A49     		ldr	r1, .L61+4
+ 682 01a6 0A68     		ldr	r2, [r1]
+ 683 01a8 184B     		ldr	r3, .L61
+ 684 01aa 5A61     		str	r2, [r3, #20]
+ 198:main.c        ****         morsecode[2]=ti;
+ 685              		.loc 1 198 0
+ 686 01ac 9A61     		str	r2, [r3, #24]
+ 199:main.c        ****         morsecode[3]=taah;
+ 687              		.loc 1 199 0
+ 688 01ae DA61     		str	r2, [r3, #28]
+ 200:main.c        ****     }
+ 689              		.loc 1 200 0
+ 690 01b0 4A68     		ldr	r2, [r1, #4]
+ 691 01b2 1A62     		str	r2, [r3, #32]
+ 692 01b4 7047     		bx	lr
+ 693              	.L57:
+ 202:main.c        ****         morsecode[0]=ti;
+ 694              		.loc 1 202 0
+ 695 01b6 7728     		cmp	r0, #119
+ 696 01b8 07D1     		bne	.L58
+ 203:main.c        ****         morsecode[1]=taah;
+ 697              		.loc 1 203 0
+ 698 01ba 144B     		ldr	r3, .L61
+ 699 01bc 144A     		ldr	r2, .L61+4
+ 700 01be 1168     		ldr	r1, [r2]
+ 701 01c0 5961     		str	r1, [r3, #20]
+ 204:main.c        ****         morsecode[2]=taah;
+ 702              		.loc 1 204 0
+ 703 01c2 5268     		ldr	r2, [r2, #4]
+ 704 01c4 9A61     		str	r2, [r3, #24]
+ 205:main.c        ****     }
+ 705              		.loc 1 205 0
+ 706 01c6 DA61     		str	r2, [r3, #28]
+ 707 01c8 7047     		bx	lr
+ 708              	.L58:
+ 207:main.c        ****         morsecode[0]=taah;
+ 709              		.loc 1 207 0
+ 710 01ca 7828     		cmp	r0, #120
+ 711 01cc 08D1     		bne	.L59
+ 208:main.c        ****         morsecode[1]=ti;
+ 712              		.loc 1 208 0
+ 713 01ce 1049     		ldr	r1, .L61+4
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 22
+
+
+ 714 01d0 4A68     		ldr	r2, [r1, #4]
+ 715 01d2 0E4B     		ldr	r3, .L61
+ 716 01d4 5A61     		str	r2, [r3, #20]
+ 209:main.c        ****         morsecode[2]=ti;
+ 717              		.loc 1 209 0
+ 718 01d6 0968     		ldr	r1, [r1]
+ 719 01d8 9961     		str	r1, [r3, #24]
+ 210:main.c        ****         morsecode[3]=taah;
+ 720              		.loc 1 210 0
+ 721 01da D961     		str	r1, [r3, #28]
+ 211:main.c        ****     }
+ 722              		.loc 1 211 0
+ 723 01dc 1A62     		str	r2, [r3, #32]
+ 724 01de 7047     		bx	lr
+ 725              	.L59:
+ 213:main.c        ****         morsecode[0]=taah;
+ 726              		.loc 1 213 0
+ 727 01e0 7928     		cmp	r0, #121
+ 728 01e2 08D1     		bne	.L60
+ 214:main.c        ****         morsecode[1]=ti;
+ 729              		.loc 1 214 0
+ 730 01e4 0A49     		ldr	r1, .L61+4
+ 731 01e6 4A68     		ldr	r2, [r1, #4]
+ 732 01e8 084B     		ldr	r3, .L61
+ 733 01ea 5A61     		str	r2, [r3, #20]
+ 215:main.c        ****         morsecode[2]=taah;
+ 734              		.loc 1 215 0
+ 735 01ec 0968     		ldr	r1, [r1]
+ 736 01ee 9961     		str	r1, [r3, #24]
+ 216:main.c        ****         morsecode[3]=taah;
+ 737              		.loc 1 216 0
+ 738 01f0 DA61     		str	r2, [r3, #28]
+ 217:main.c        ****     }
+ 739              		.loc 1 217 0
+ 740 01f2 1A62     		str	r2, [r3, #32]
+ 741 01f4 7047     		bx	lr
+ 742              	.L60:
+ 219:main.c        ****         morsecode[0]=taah;
+ 743              		.loc 1 219 0
+ 744 01f6 7A28     		cmp	r0, #122
+ 745 01f8 07D1     		bne	.L34
+ 220:main.c        ****         morsecode[1]=taah;
+ 746              		.loc 1 220 0
+ 747 01fa 054A     		ldr	r2, .L61+4
+ 748 01fc 5168     		ldr	r1, [r2, #4]
+ 749 01fe 034B     		ldr	r3, .L61
+ 750 0200 5961     		str	r1, [r3, #20]
+ 221:main.c        ****         morsecode[2]=ti;
+ 751              		.loc 1 221 0
+ 752 0202 9961     		str	r1, [r3, #24]
+ 222:main.c        ****         morsecode[3]=ti;
+ 753              		.loc 1 222 0
+ 754 0204 1268     		ldr	r2, [r2]
+ 755 0206 DA61     		str	r2, [r3, #28]
+ 223:main.c        ****     }
+ 756              		.loc 1 223 0
+ 757 0208 1A62     		str	r2, [r3, #32]
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 23
+
+
+ 758              	.L34:
+ 759 020a 7047     		bx	lr
+ 760              	.L62:
+ 761              		.align	2
+ 762              	.L61:
+ 763 020c 00000000 		.word	.LANCHOR0
+ 764 0210 00000000 		.word	.LANCHOR1
+ 765              		.cfi_endproc
+ 766              	.LFE65:
+ 767              		.size	morse, .-morse
+ 768              		.section	.text.modifymorsecode,"ax",%progbits
+ 769              		.align	2
+ 770              		.global	modifymorsecode
+ 771              		.thumb
+ 772              		.thumb_func
+ 773              		.type	modifymorsecode, %function
+ 774              	modifymorsecode:
+ 775              	.LFB66:
+ 226:main.c        ****     morse(letter);
+ 776              		.loc 1 226 0
+ 777              		.cfi_startproc
+ 778              		@ args = 0, pretend = 0, frame = 0
+ 779              		@ frame_needed = 0, uses_anonymous_args = 0
+ 780              	.LVL31:
+ 781 0000 10B5     		push	{r4, lr}
+ 782              		.cfi_def_cfa_offset 8
+ 783              		.cfi_offset 4, -8
+ 784              		.cfi_offset 14, -4
+ 227:main.c        ****     morsecode[1]+=morsecode[0];
+ 785              		.loc 1 227 0
+ 786 0002 FFF7FEFF 		bl	morse
+ 787              	.LVL32:
+ 228:main.c        ****     morsecode[2]+=morsecode[1];
+ 788              		.loc 1 228 0
+ 789 0006 114B     		ldr	r3, .L69
+ 790 0008 5C69     		ldr	r4, [r3, #20]
+ 791 000a 9A69     		ldr	r2, [r3, #24]
+ 792 000c 2244     		add	r2, r2, r4
+ 793 000e 9A61     		str	r2, [r3, #24]
+ 229:main.c        ****     morsecode[3]+=morsecode[2];
+ 794              		.loc 1 229 0
+ 795 0010 D969     		ldr	r1, [r3, #28]
+ 796 0012 1144     		add	r1, r1, r2
+ 797 0014 D961     		str	r1, [r3, #28]
+ 230:main.c        ****     if (morsecode[1]<=morsecode[0]){    morsetottimespace=0;
+ 798              		.loc 1 230 0
+ 799 0016 186A     		ldr	r0, [r3, #32]
+ 800 0018 0844     		add	r0, r0, r1
+ 801 001a 1862     		str	r0, [r3, #32]
+ 231:main.c        ****     }else if(morsecode[2]<=morsecode[1]){   morsetottimespace=5000;
+ 802              		.loc 1 231 0
+ 803 001c 9442     		cmp	r4, r2
+ 804 001e 02DB     		blt	.L64
+ 231:main.c        ****     }else if(morsecode[2]<=morsecode[1]){   morsetottimespace=5000;
+ 805              		.loc 1 231 0 is_stmt 0 discriminator 1
+ 806 0020 0022     		movs	r2, #0
+ 807 0022 5A62     		str	r2, [r3, #36]
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 24
+
+
+ 808 0024 10BD     		pop	{r4, pc}
+ 809              	.L64:
+ 232:main.c        ****     }else if(morsecode[3]<=morsecode[2]){   morsetottimespace=10000;
+ 810              		.loc 1 232 0 is_stmt 1
+ 811 0026 8A42     		cmp	r2, r1
+ 812 0028 04DB     		blt	.L66
+ 232:main.c        ****     }else if(morsecode[3]<=morsecode[2]){   morsetottimespace=10000;
+ 813              		.loc 1 232 0 is_stmt 0 discriminator 1
+ 814 002a 41F28832 		movw	r2, #5000
+ 815 002e 074B     		ldr	r3, .L69
+ 816 0030 5A62     		str	r2, [r3, #36]
+ 817 0032 10BD     		pop	{r4, pc}
+ 818              	.L66:
+ 233:main.c        ****     }else { morsetottimespace=15000;}
+ 819              		.loc 1 233 0 is_stmt 1
+ 820 0034 8142     		cmp	r1, r0
+ 821 0036 04DB     		blt	.L67
+ 233:main.c        ****     }else { morsetottimespace=15000;}
+ 822              		.loc 1 233 0 is_stmt 0 discriminator 1
+ 823 0038 42F21072 		movw	r2, #10000
+ 824 003c 034B     		ldr	r3, .L69
+ 825 003e 5A62     		str	r2, [r3, #36]
+ 826 0040 10BD     		pop	{r4, pc}
+ 827              	.L67:
+ 234:main.c        **** }
+ 828              		.loc 1 234 0 is_stmt 1
+ 829 0042 43F69822 		movw	r2, #15000
+ 830 0046 014B     		ldr	r3, .L69
+ 831 0048 5A62     		str	r2, [r3, #36]
+ 832 004a 10BD     		pop	{r4, pc}
+ 833              	.L70:
+ 834              		.align	2
+ 835              	.L69:
+ 836 004c 00000000 		.word	.LANCHOR0
+ 837              		.cfi_endproc
+ 838              	.LFE66:
+ 839              		.size	modifymorsecode, .-modifymorsecode
+ 840              		.global	__aeabi_ddiv
+ 841              		.global	__aeabi_dadd
+ 842              		.global	__aeabi_d2iz
+ 843              		.section	.text.MORSE,"ax",%progbits
+ 844              		.align	2
+ 845              		.global	MORSE
+ 846              		.thumb
+ 847              		.thumb_func
+ 848              		.type	MORSE, %function
+ 849              	MORSE:
+ 850              	.LFB67:
+ 237:main.c        ****     if (begin){
+ 851              		.loc 1 237 0
+ 852              		.cfi_startproc
+ 853              		@ args = 0, pretend = 0, frame = 0
+ 854              		@ frame_needed = 0, uses_anonymous_args = 0
+ 855 0000 38B5     		push	{r3, r4, r5, lr}
+ 856              		.cfi_def_cfa_offset 16
+ 857              		.cfi_offset 3, -16
+ 858              		.cfi_offset 4, -12
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 25
+
+
+ 859              		.cfi_offset 5, -8
+ 860              		.cfi_offset 14, -4
+ 238:main.c        ****         modifymorsecode(mot[morseint]);
+ 861              		.loc 1 238 0
+ 862 0002 814B     		ldr	r3, .L91+8
+ 863 0004 1B7A     		ldrb	r3, [r3, #8]	@ zero_extendqisi2
+ 864 0006 002B     		cmp	r3, #0
+ 865 0008 00F09480 		beq	.L72
+ 239:main.c        ****         if(morsecode[0]==ti) UART_PutChar('.');
+ 866              		.loc 1 239 0
+ 867 000c 7F4C     		ldr	r4, .L91+12
+ 868 000e 804B     		ldr	r3, .L91+16
+ 869 0010 1A68     		ldr	r2, [r3]
+ 870 0012 A36A     		ldr	r3, [r4, #40]
+ 871 0014 D05C     		ldrb	r0, [r2, r3]	@ zero_extendqisi2
+ 872 0016 FFF7FEFF 		bl	modifymorsecode
+ 873              	.LVL33:
+ 240:main.c        ****         if(morsecode[0]==taah) UART_PutChar('-');
+ 874              		.loc 1 240 0
+ 875 001a 6269     		ldr	r2, [r4, #20]
+ 876 001c 7A4B     		ldr	r3, .L91+8
+ 877 001e 1B68     		ldr	r3, [r3]
+ 878 0020 9A42     		cmp	r2, r3
+ 879 0022 02D1     		bne	.L73
+ 240:main.c        ****         if(morsecode[0]==taah) UART_PutChar('-');
+ 880              		.loc 1 240 0 is_stmt 0 discriminator 1
+ 881 0024 2E20     		movs	r0, #46
+ 882 0026 FFF7FEFF 		bl	UART_PutChar
+ 883              	.LVL34:
+ 884              	.L73:
+ 241:main.c        ****         if(morsecode[1]-morsecode[0]==ti) UART_PutChar('.');
+ 885              		.loc 1 241 0 is_stmt 1
+ 886 002a 784B     		ldr	r3, .L91+12
+ 887 002c 5A69     		ldr	r2, [r3, #20]
+ 888 002e 764B     		ldr	r3, .L91+8
+ 889 0030 5B68     		ldr	r3, [r3, #4]
+ 890 0032 9A42     		cmp	r2, r3
+ 891 0034 02D1     		bne	.L74
+ 241:main.c        ****         if(morsecode[1]-morsecode[0]==ti) UART_PutChar('.');
+ 892              		.loc 1 241 0 is_stmt 0 discriminator 1
+ 893 0036 2D20     		movs	r0, #45
+ 894 0038 FFF7FEFF 		bl	UART_PutChar
+ 895              	.LVL35:
+ 896              	.L74:
+ 242:main.c        ****         if(morsecode[1]-morsecode[0]==taah) UART_PutChar('-');
+ 897              		.loc 1 242 0 is_stmt 1
+ 898 003c 734A     		ldr	r2, .L91+12
+ 899 003e 9369     		ldr	r3, [r2, #24]
+ 900 0040 5269     		ldr	r2, [r2, #20]
+ 901 0042 9B1A     		subs	r3, r3, r2
+ 902 0044 704A     		ldr	r2, .L91+8
+ 903 0046 1268     		ldr	r2, [r2]
+ 904 0048 9342     		cmp	r3, r2
+ 905 004a 02D1     		bne	.L75
+ 242:main.c        ****         if(morsecode[1]-morsecode[0]==taah) UART_PutChar('-');
+ 906              		.loc 1 242 0 is_stmt 0 discriminator 1
+ 907 004c 2E20     		movs	r0, #46
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 26
+
+
+ 908 004e FFF7FEFF 		bl	UART_PutChar
+ 909              	.LVL36:
+ 910              	.L75:
+ 243:main.c        ****         if(morsecode[2]-morsecode[1]==ti) UART_PutChar('.');
+ 911              		.loc 1 243 0 is_stmt 1
+ 912 0052 6E4A     		ldr	r2, .L91+12
+ 913 0054 9369     		ldr	r3, [r2, #24]
+ 914 0056 5269     		ldr	r2, [r2, #20]
+ 915 0058 9B1A     		subs	r3, r3, r2
+ 916 005a 6B4A     		ldr	r2, .L91+8
+ 917 005c 5268     		ldr	r2, [r2, #4]
+ 918 005e 9342     		cmp	r3, r2
+ 919 0060 02D1     		bne	.L76
+ 243:main.c        ****         if(morsecode[2]-morsecode[1]==ti) UART_PutChar('.');
+ 920              		.loc 1 243 0 is_stmt 0 discriminator 1
+ 921 0062 2D20     		movs	r0, #45
+ 922 0064 FFF7FEFF 		bl	UART_PutChar
+ 923              	.LVL37:
+ 924              	.L76:
+ 244:main.c        ****         if(morsecode[2]-morsecode[1]==taah) UART_PutChar('-');
+ 925              		.loc 1 244 0 is_stmt 1
+ 926 0068 684A     		ldr	r2, .L91+12
+ 927 006a D369     		ldr	r3, [r2, #28]
+ 928 006c 9269     		ldr	r2, [r2, #24]
+ 929 006e 9B1A     		subs	r3, r3, r2
+ 930 0070 654A     		ldr	r2, .L91+8
+ 931 0072 1268     		ldr	r2, [r2]
+ 932 0074 9342     		cmp	r3, r2
+ 933 0076 02D1     		bne	.L77
+ 244:main.c        ****         if(morsecode[2]-morsecode[1]==taah) UART_PutChar('-');
+ 934              		.loc 1 244 0 is_stmt 0 discriminator 1
+ 935 0078 2E20     		movs	r0, #46
+ 936 007a FFF7FEFF 		bl	UART_PutChar
+ 937              	.LVL38:
+ 938              	.L77:
+ 245:main.c        ****         if(morsecode[3]-morsecode[2]==ti) UART_PutChar('.');
+ 939              		.loc 1 245 0 is_stmt 1
+ 940 007e 634A     		ldr	r2, .L91+12
+ 941 0080 D369     		ldr	r3, [r2, #28]
+ 942 0082 9269     		ldr	r2, [r2, #24]
+ 943 0084 9B1A     		subs	r3, r3, r2
+ 944 0086 604A     		ldr	r2, .L91+8
+ 945 0088 5268     		ldr	r2, [r2, #4]
+ 946 008a 9342     		cmp	r3, r2
+ 947 008c 02D1     		bne	.L78
+ 245:main.c        ****         if(morsecode[3]-morsecode[2]==ti) UART_PutChar('.');
+ 948              		.loc 1 245 0 is_stmt 0 discriminator 1
+ 949 008e 2D20     		movs	r0, #45
+ 950 0090 FFF7FEFF 		bl	UART_PutChar
+ 951              	.LVL39:
+ 952              	.L78:
+ 246:main.c        ****         if(morsecode[3]-morsecode[2]==taah) UART_PutChar('-');
+ 953              		.loc 1 246 0 is_stmt 1
+ 954 0094 5D4A     		ldr	r2, .L91+12
+ 955 0096 136A     		ldr	r3, [r2, #32]
+ 956 0098 D269     		ldr	r2, [r2, #28]
+ 957 009a 9B1A     		subs	r3, r3, r2
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 27
+
+
+ 958 009c 5A4A     		ldr	r2, .L91+8
+ 959 009e 1268     		ldr	r2, [r2]
+ 960 00a0 9342     		cmp	r3, r2
+ 961 00a2 02D1     		bne	.L79
+ 246:main.c        ****         if(morsecode[3]-morsecode[2]==taah) UART_PutChar('-');
+ 962              		.loc 1 246 0 is_stmt 0 discriminator 1
+ 963 00a4 2E20     		movs	r0, #46
+ 964 00a6 FFF7FEFF 		bl	UART_PutChar
+ 965              	.LVL40:
+ 966              	.L79:
+ 247:main.c        ****         UART_PutChar(' ');
+ 967              		.loc 1 247 0 is_stmt 1
+ 968 00aa 584A     		ldr	r2, .L91+12
+ 969 00ac 136A     		ldr	r3, [r2, #32]
+ 970 00ae D269     		ldr	r2, [r2, #28]
+ 971 00b0 9B1A     		subs	r3, r3, r2
+ 972 00b2 554A     		ldr	r2, .L91+8
+ 973 00b4 5268     		ldr	r2, [r2, #4]
+ 974 00b6 9342     		cmp	r3, r2
+ 975 00b8 02D1     		bne	.L80
+ 247:main.c        ****         UART_PutChar(' ');
+ 976              		.loc 1 247 0 is_stmt 0 discriminator 1
+ 977 00ba 2D20     		movs	r0, #45
+ 978 00bc FFF7FEFF 		bl	UART_PutChar
+ 979              	.LVL41:
+ 980              	.L80:
+ 248:main.c        ****         
+ 981              		.loc 1 248 0 is_stmt 1
+ 982 00c0 2020     		movs	r0, #32
+ 983 00c2 FFF7FEFF 		bl	UART_PutChar
+ 984              	.LVL42:
+ 985              	.LBB2:
+ 251:main.c        ****                 if (semaphore_alphabet[ba].let==mot[morseint]){
+ 986              		.loc 1 251 0
+ 987 00c6 0024     		movs	r4, #0
+ 988 00c8 32E0     		b	.L81
+ 989              	.LVL43:
+ 990              	.L83:
+ 252:main.c        ****                     PWM_1_WriteCompare2((int)((semaphore_alphabet[ba].num/1.8)+26));
+ 991              		.loc 1 252 0
+ 992 00ca 04EB4402 		add	r2, r4, r4, lsl #1
+ 993 00ce D300     		lsls	r3, r2, #3
+ 994 00d0 4D4A     		ldr	r2, .L91+8
+ 995 00d2 1344     		add	r3, r3, r2
+ 996 00d4 1A7C     		ldrb	r2, [r3, #16]	@ zero_extendqisi2
+ 997 00d6 4E4B     		ldr	r3, .L91+16
+ 998 00d8 1968     		ldr	r1, [r3]
+ 999 00da 4C4B     		ldr	r3, .L91+12
+ 1000 00dc 9B6A     		ldr	r3, [r3, #40]
+ 1001 00de CB5C     		ldrb	r3, [r1, r3]	@ zero_extendqisi2
+ 1002 00e0 9A42     		cmp	r2, r3
+ 1003 00e2 24D1     		bne	.L82
+ 253:main.c        ****                     PWM_1_WriteCompare1((int)((semaphore_alphabet[ba].num1/1.8)+26));
+ 1004              		.loc 1 253 0
+ 1005 00e4 6200     		lsls	r2, r4, #1
+ 1006 00e6 2244     		add	r2, r2, r4
+ 1007 00e8 D300     		lsls	r3, r2, #3
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 28
+
+
+ 1008 00ea 474D     		ldr	r5, .L91+8
+ 1009 00ec 1D44     		add	r5, r5, r3
+ 1010 00ee 44A3     		adr	r3, .L91
+ 1011 00f0 D3E90023 		ldrd	r2, [r3]
+ 1012 00f4 D5E90601 		ldrd	r0, [r5, #24]
+ 1013 00f8 FFF7FEFF 		bl	__aeabi_ddiv
+ 1014              	.LVL44:
+ 1015 00fc 0022     		movs	r2, #0
+ 1016 00fe 454B     		ldr	r3, .L91+20
+ 1017 0100 FFF7FEFF 		bl	__aeabi_dadd
+ 1018              	.LVL45:
+ 1019 0104 FFF7FEFF 		bl	__aeabi_d2iz
+ 1020              	.LVL46:
+ 1021 0108 80B2     		uxth	r0, r0
+ 1022 010a FFF7FEFF 		bl	PWM_1_WriteCompare2
+ 1023              	.LVL47:
+ 254:main.c        ****                 }
+ 1024              		.loc 1 254 0
+ 1025 010e 3CA3     		adr	r3, .L91
+ 1026 0110 D3E90023 		ldrd	r2, [r3]
+ 1027 0114 D5E90801 		ldrd	r0, [r5, #32]
+ 1028 0118 FFF7FEFF 		bl	__aeabi_ddiv
+ 1029              	.LVL48:
+ 1030 011c 0022     		movs	r2, #0
+ 1031 011e 3D4B     		ldr	r3, .L91+20
+ 1032 0120 FFF7FEFF 		bl	__aeabi_dadd
+ 1033              	.LVL49:
+ 1034 0124 FFF7FEFF 		bl	__aeabi_d2iz
+ 1035              	.LVL50:
+ 1036 0128 80B2     		uxth	r0, r0
+ 1037 012a FFF7FEFF 		bl	PWM_1_WriteCompare1
+ 1038              	.LVL51:
+ 1039              	.L82:
+ 251:main.c        ****                 if (semaphore_alphabet[ba].let==mot[morseint]){
+ 1040              		.loc 1 251 0 discriminator 2
+ 1041 012e 0134     		adds	r4, r4, #1
+ 1042              	.LVL52:
+ 1043              	.L81:
+ 251:main.c        ****                 if (semaphore_alphabet[ba].let==mot[morseint]){
+ 1044              		.loc 1 251 0 is_stmt 0 discriminator 1
+ 1045 0130 192C     		cmp	r4, #25
+ 1046 0132 CADD     		ble	.L83
+ 1047              	.LVL53:
+ 1048              	.L72:
+ 1049              	.LBE2:
+ 260:main.c        ****     
+ 1050              		.loc 1 260 0 is_stmt 1
+ 1051 0134 0022     		movs	r2, #0
+ 1052 0136 344B     		ldr	r3, .L91+8
+ 1053 0138 1A72     		strb	r2, [r3, #8]
+ 262:main.c        ****         Timer_ReadStatusRegister();
+ 1054              		.loc 1 262 0
+ 1055 013a 3449     		ldr	r1, .L91+12
+ 1056 013c 086A     		ldr	r0, [r1, #32]
+ 1057 013e 4B6A     		ldr	r3, [r1, #36]
+ 1058 0140 C218     		adds	r2, r0, r3
+ 1059 0142 CB6A     		ldr	r3, [r1, #44]
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 29
+
+
+ 1060 0144 9A42     		cmp	r2, r3
+ 1061 0146 26DA     		bge	.L84
+ 263:main.c        ****         if(countTime>morsetottimespace+morsecode[3]+20000){
+ 1062              		.loc 1 263 0
+ 1063 0148 FFF7FEFF 		bl	Timer_ReadStatusRegister
+ 1064              	.LVL54:
+ 264:main.c        ****             begin=1;
+ 1065              		.loc 1 264 0
+ 1066 014c 2F4A     		ldr	r2, .L91+12
+ 1067 014e 116A     		ldr	r1, [r2, #32]
+ 1068 0150 536A     		ldr	r3, [r2, #36]
+ 1069 0152 0B44     		add	r3, r3, r1
+ 1070 0154 03F59C43 		add	r3, r3, #19968
+ 1071 0158 2033     		adds	r3, r3, #32
+ 1072 015a D26A     		ldr	r2, [r2, #44]
+ 1073 015c 9342     		cmp	r3, r2
+ 1074 015e 49DA     		bge	.L85
+ 265:main.c        ****             countTime=0;
+ 1075              		.loc 1 265 0
+ 1076 0160 0122     		movs	r2, #1
+ 1077 0162 294B     		ldr	r3, .L91+8
+ 1078 0164 1A72     		strb	r2, [r3, #8]
+ 266:main.c        ****             morseint++;
+ 1079              		.loc 1 266 0
+ 1080 0166 294B     		ldr	r3, .L91+12
+ 1081 0168 0022     		movs	r2, #0
+ 1082 016a DA62     		str	r2, [r3, #44]
+ 267:main.c        ****             if(strlen(mot)==(morseint)){
+ 1083              		.loc 1 267 0
+ 1084 016c 9C6A     		ldr	r4, [r3, #40]
+ 1085 016e 0134     		adds	r4, r4, #1
+ 1086 0170 9C62     		str	r4, [r3, #40]
+ 268:main.c        ****                 morseint=0;
+ 1087              		.loc 1 268 0
+ 1088 0172 274B     		ldr	r3, .L91+16
+ 1089 0174 1868     		ldr	r0, [r3]
+ 1090 0176 FFF7FEFF 		bl	strlen
+ 1091              	.LVL55:
+ 1092 017a A042     		cmp	r0, r4
+ 1093 017c 3AD1     		bne	.L85
+ 269:main.c        ****                 rxend=1;
+ 1094              		.loc 1 269 0
+ 1095 017e 234B     		ldr	r3, .L91+12
+ 1096 0180 0022     		movs	r2, #0
+ 1097 0182 9A62     		str	r2, [r3, #40]
+ 270:main.c        ****                 UART_PutChar('\n');
+ 1098              		.loc 1 270 0
+ 1099 0184 0122     		movs	r2, #1
+ 1100 0186 83F83020 		strb	r2, [r3, #48]
+ 271:main.c        ****                 //memset(formmot, 0, strlen(formmot));
+ 1101              		.loc 1 271 0
+ 1102 018a 0A20     		movs	r0, #10
+ 1103 018c FFF7FEFF 		bl	UART_PutChar
+ 1104              	.LVL56:
+ 273:main.c        ****             }
+ 1105              		.loc 1 273 0
+ 1106 0190 FFF7FEFF 		bl	interrupt_Stop
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 30
+
+
+ 1107              	.LVL57:
+ 1108 0194 2EE0     		b	.L85
+ 1109              	.L84:
+ 278:main.c        ****             soundPlay();
+ 1110              		.loc 1 278 0
+ 1111 0196 1D4A     		ldr	r2, .L91+12
+ 1112 0198 5269     		ldr	r2, [r2, #20]
+ 1113 019a 9342     		cmp	r3, r2
+ 1114 019c 25DB     		blt	.L86
+ 278:main.c        ****             soundPlay();
+ 1115              		.loc 1 278 0 is_stmt 0 discriminator 1
+ 1116 019e 02F59C52 		add	r2, r2, #4992
+ 1117 01a2 0832     		adds	r2, r2, #8
+ 1118 01a4 9342     		cmp	r3, r2
+ 1119 01a6 06DD     		ble	.L87
+ 278:main.c        ****             soundPlay();
+ 1120              		.loc 1 278 0 discriminator 2
+ 1121 01a8 184A     		ldr	r2, .L91+12
+ 1122 01aa 9269     		ldr	r2, [r2, #24]
+ 1123 01ac 02F59C52 		add	r2, r2, #4992
+ 1124 01b0 0832     		adds	r2, r2, #8
+ 1125 01b2 9342     		cmp	r3, r2
+ 1126 01b4 19DB     		blt	.L86
+ 1127              	.L87:
+ 278:main.c        ****             soundPlay();
+ 1128              		.loc 1 278 0 discriminator 4
+ 1129 01b6 154A     		ldr	r2, .L91+12
+ 1130 01b8 9269     		ldr	r2, [r2, #24]
+ 1131 01ba 02F51C52 		add	r2, r2, #9984
+ 1132 01be 1032     		adds	r2, r2, #16
+ 1133 01c0 9342     		cmp	r3, r2
+ 1134 01c2 06DD     		ble	.L88
+ 278:main.c        ****             soundPlay();
+ 1135              		.loc 1 278 0 discriminator 5
+ 1136 01c4 114A     		ldr	r2, .L91+12
+ 1137 01c6 D269     		ldr	r2, [r2, #28]
+ 1138 01c8 02F51C52 		add	r2, r2, #9984
+ 1139 01cc 1032     		adds	r2, r2, #16
+ 1140 01ce 9342     		cmp	r3, r2
+ 1141 01d0 0BDB     		blt	.L86
+ 1142              	.L88:
+ 278:main.c        ****             soundPlay();
+ 1143              		.loc 1 278 0 discriminator 7
+ 1144 01d2 0E4A     		ldr	r2, .L91+12
+ 1145 01d4 D269     		ldr	r2, [r2, #28]
+ 1146 01d6 02F56A52 		add	r2, r2, #14976
+ 1147 01da 1832     		adds	r2, r2, #24
+ 1148 01dc 9342     		cmp	r3, r2
+ 1149 01de 07DD     		ble	.L89
+ 278:main.c        ****             soundPlay();
+ 1150              		.loc 1 278 0 discriminator 8
+ 1151 01e0 00F56A50 		add	r0, r0, #14976
+ 1152 01e4 1830     		adds	r0, r0, #24
+ 1153 01e6 8342     		cmp	r3, r0
+ 1154 01e8 02DA     		bge	.L89
+ 1155              	.L86:
+ 279:main.c        ****         }
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 31
+
+
+ 1156              		.loc 1 279 0 is_stmt 1
+ 1157 01ea FFF7FEFF 		bl	soundPlay
+ 1158              	.LVL58:
+ 1159 01ee 01E0     		b	.L85
+ 1160              	.L89:
+ 282:main.c        ****         }       
+ 1161              		.loc 1 282 0
+ 1162 01f0 FFF7FEFF 		bl	Timer_ReadStatusRegister
+ 1163              	.LVL59:
+ 1164              	.L85:
+ 285:main.c        **** }
+ 1165              		.loc 1 285 0
+ 1166 01f4 054A     		ldr	r2, .L91+12
+ 1167 01f6 D36A     		ldr	r3, [r2, #44]
+ 1168 01f8 0133     		adds	r3, r3, #1
+ 1169 01fa D362     		str	r3, [r2, #44]
+ 1170 01fc 38BD     		pop	{r3, r4, r5, pc}
+ 1171              	.L92:
+ 1172 01fe 00BF     		.align	3
+ 1173              	.L91:
+ 1174 0200 CDCCCCCC 		.word	-858993459
+ 1175 0204 CCCCFC3F 		.word	1073532108
+ 1176 0208 00000000 		.word	.LANCHOR1
+ 1177 020c 00000000 		.word	.LANCHOR0
+ 1178 0210 00000000 		.word	mot
+ 1179 0214 00003A40 		.word	1077542912
+ 1180              		.cfi_endproc
+ 1181              	.LFE67:
+ 1182              		.size	MORSE, .-MORSE
+ 1183              		.section	.text.SW4_Handler,"ax",%progbits
+ 1184              		.align	2
+ 1185              		.global	SW4_Handler
+ 1186              		.thumb
+ 1187              		.thumb_func
+ 1188              		.type	SW4_Handler, %function
+ 1189              	SW4_Handler:
+ 1190              	.LFB71:
+ 320:main.c        ****     soundPlay();
+ 1191              		.loc 1 320 0
+ 1192              		.cfi_startproc
+ 1193              		@ args = 0, pretend = 0, frame = 0
+ 1194              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1195 0000 08B5     		push	{r3, lr}
+ 1196              		.cfi_def_cfa_offset 8
+ 1197              		.cfi_offset 3, -8
+ 1198              		.cfi_offset 14, -4
+ 321:main.c        ****     if (!SW1_Read()){
+ 1199              		.loc 1 321 0
+ 1200 0002 FFF7FEFF 		bl	soundPlay
+ 1201              	.LVL60:
+ 322:main.c        ****         pinsWrite(0);
+ 1202              		.loc 1 322 0
+ 1203 0006 FFF7FEFF 		bl	SW1_Read
+ 1204              	.LVL61:
+ 1205 000a 18B9     		cbnz	r0, .L93
+ 323:main.c        ****         interrupt_Stop();
+ 1206              		.loc 1 323 0
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 32
+
+
+ 1207 000c FFF7FEFF 		bl	pinsWrite
+ 1208              	.LVL62:
+ 324:main.c        ****     }
+ 1209              		.loc 1 324 0
+ 1210 0010 FFF7FEFF 		bl	interrupt_Stop
+ 1211              	.LVL63:
+ 1212              	.L93:
+ 1213 0014 08BD     		pop	{r3, pc}
+ 1214              		.cfi_endproc
+ 1215              	.LFE71:
+ 1216              		.size	SW4_Handler, .-SW4_Handler
+ 1217              		.global	__aeabi_i2d
+ 1218              		.global	__aeabi_dmul
+ 1219              		.global	__aeabi_d2f
+ 1220 0016 00BF     		.section	.text.main,"ax",%progbits
+ 1221              		.align	2
+ 1222              		.global	main
+ 1223              		.thumb
+ 1224              		.thumb_func
+ 1225              		.type	main, %function
+ 1226              	main:
+ 1227              	.LFB73:
+ 353:main.c        **** 
+ 354:main.c        **** int main(void)
+ 355:main.c        **** {
+ 1228              		.loc 1 355 0
+ 1229              		.cfi_startproc
+ 1230              		@ args = 0, pretend = 0, frame = 0
+ 1231              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1232 0000 38B5     		push	{r3, r4, r5, lr}
+ 1233              		.cfi_def_cfa_offset 16
+ 1234              		.cfi_offset 3, -16
+ 1235              		.cfi_offset 4, -12
+ 1236              		.cfi_offset 5, -8
+ 1237              		.cfi_offset 14, -4
+ 356:main.c        ****     isr_StartEx(uart_rx_Handler);
+ 1238              		.loc 1 356 0
+ 1239 0002 8948     		ldr	r0, .L121+16
+ 1240 0004 FFF7FEFF 		bl	isr_StartEx
+ 1241              	.LVL64:
+ 357:main.c        ****     CyGlobalIntEnable; /* Enable global interrupts. */
+ 1242              		.loc 1 357 0
+ 1243              		.syntax unified
+ 1244              	@ 357 "main.c" 1
+ 1245 0008 62B6     		CPSIE   i
+ 1246              	@ 0 "" 2
+ 1247              	.LVL65:
+ 1248              		.thumb
+ 1249              		.syntax unified
+ 1250              	.LBB3:
+ 358:main.c        ****     for(int i=0; i<=99; i++){
+ 1251              		.loc 1 358 0
+ 1252 000a 0024     		movs	r4, #0
+ 1253 000c 17E0     		b	.L97
+ 1254              	.LVL66:
+ 1255              	.L98:
+ 359:main.c        ****        vec[i]= sin(i*2*3.14159265/50)+1;
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 33
+
+
+ 1256              		.loc 1 359 0 discriminator 3
+ 1257 000e 6000     		lsls	r0, r4, #1
+ 1258 0010 FFF7FEFF 		bl	__aeabi_i2d
+ 1259              	.LVL67:
+ 1260 0014 80A3     		adr	r3, .L121
+ 1261 0016 D3E90023 		ldrd	r2, [r3]
+ 1262 001a FFF7FEFF 		bl	__aeabi_dmul
+ 1263              	.LVL68:
+ 1264 001e 0022     		movs	r2, #0
+ 1265 0020 824B     		ldr	r3, .L121+20
+ 1266 0022 FFF7FEFF 		bl	__aeabi_ddiv
+ 1267              	.LVL69:
+ 1268 0026 FFF7FEFF 		bl	sin
+ 1269              	.LVL70:
+ 1270 002a 0022     		movs	r2, #0
+ 1271 002c 804B     		ldr	r3, .L121+24
+ 1272 002e FFF7FEFF 		bl	__aeabi_dadd
+ 1273              	.LVL71:
+ 1274 0032 FFF7FEFF 		bl	__aeabi_d2f
+ 1275              	.LVL72:
+ 1276 0036 7F4B     		ldr	r3, .L121+28
+ 1277 0038 43F82400 		str	r0, [r3, r4, lsl #2]	@ float
+ 358:main.c        ****     for(int i=0; i<=99; i++){
+ 1278              		.loc 1 358 0 discriminator 3
+ 1279 003c 0134     		adds	r4, r4, #1
+ 1280              	.LVL73:
+ 1281              	.L97:
+ 358:main.c        ****     for(int i=0; i<=99; i++){
+ 1282              		.loc 1 358 0 is_stmt 0 discriminator 1
+ 1283 003e 632C     		cmp	r4, #99
+ 1284 0040 E5DD     		ble	.L98
+ 1285              	.LBE3:
+ 360:main.c        ****     }
+ 361:main.c        ****     /* Place your initialization/startup code here (e.g. MyInst_Start()) */
+ 362:main.c        ****     LCD_Start();
+ 1286              		.loc 1 362 0 is_stmt 1
+ 1287 0042 FFF7FEFF 		bl	LCD_Start
+ 1288              	.LVL74:
+ 363:main.c        ****     LCD_ClearDisplay();
+ 1289              		.loc 1 363 0
+ 1290 0046 0120     		movs	r0, #1
+ 1291 0048 FFF7FEFF 		bl	LCD_WriteControl
+ 1292              	.LVL75:
+ 364:main.c        ****     //_Bool allum=1;
+ 365:main.c        ****     keypadInit();
+ 1293              		.loc 1 365 0
+ 1294 004c FFF7FEFF 		bl	keypadInit
+ 1295              	.LVL76:
+ 366:main.c        ****     Timer_Start();
+ 1296              		.loc 1 366 0
+ 1297 0050 FFF7FEFF 		bl	Timer_Start
+ 1298              	.LVL77:
+ 367:main.c        ****     VDAC8_1_Start();
+ 1299              		.loc 1 367 0
+ 1300 0054 FFF7FEFF 		bl	VDAC8_1_Start
+ 1301              	.LVL78:
+ 368:main.c        ****     ADC_Start();
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 34
+
+
+ 1302              		.loc 1 368 0
+ 1303 0058 FFF7FEFF 		bl	ADC_Start
+ 1304              	.LVL79:
+ 369:main.c        ****     ADC_StartConvert();
+ 1305              		.loc 1 369 0
+ 1306 005c FFF7FEFF 		bl	ADC_StartConvert
+ 1307              	.LVL80:
+ 370:main.c        ****     PWM_1_Start();
+ 1308              		.loc 1 370 0
+ 1309 0060 FFF7FEFF 		bl	PWM_1_Start
+ 1310              	.LVL81:
+ 371:main.c        ****     AMux_1_Start();
+ 1311              		.loc 1 371 0
+ 1312 0064 FFF7FEFF 		bl	AMux_1_Start
+ 1313              	.LVL82:
+ 372:main.c        ****     UART_Start();
+ 1314              		.loc 1 372 0
+ 1315 0068 FFF7FEFF 		bl	UART_Start
+ 1316              	.LVL83:
+ 373:main.c        ****     int lcdcount=0;
+ 374:main.c        **** 
+ 375:main.c        ****     UART_PutString("Hello\n");
+ 1317              		.loc 1 375 0
+ 1318 006c 7248     		ldr	r0, .L121+32
+ 1319 006e FFF7FEFF 		bl	UART_PutString
+ 1320              	.LVL84:
+ 376:main.c        ****     UART_GetChar();
+ 1321              		.loc 1 376 0
+ 1322 0072 FFF7FEFF 		bl	UART_GetChar
+ 1323              	.LVL85:
+ 373:main.c        ****     int lcdcount=0;
+ 1324              		.loc 1 373 0
+ 1325 0076 0025     		movs	r5, #0
+ 1326              	.LVL86:
+ 1327              	.L99:
+ 1328              	.LBB4:
+ 377:main.c        ****     for(;;)
+ 378:main.c        ****     {
+ 379:main.c        ****         if(rxbegin){
+ 1329              		.loc 1 379 0
+ 1330 0078 704B     		ldr	r3, .L121+36
+ 1331 007a 1B79     		ldrb	r3, [r3, #4]	@ zero_extendqisi2
+ 1332 007c 43B1     		cbz	r3, .L100
+ 380:main.c        ****             
+ 381:main.c        ****             rxbegin=0;
+ 1333              		.loc 1 381 0
+ 1334 007e 0022     		movs	r2, #0
+ 1335 0080 6E4B     		ldr	r3, .L121+36
+ 1336 0082 1A71     		strb	r2, [r3, #4]
+ 382:main.c        ****             mot=formmot;
+ 1337              		.loc 1 382 0
+ 1338 0084 6E4A     		ldr	r2, .L121+40
+ 1339 0086 6F4B     		ldr	r3, .L121+44
+ 1340 0088 1A60     		str	r2, [r3]
+ 383:main.c        ****             interrupt_StartEx(MORSE);
+ 1341              		.loc 1 383 0
+ 1342 008a 6F48     		ldr	r0, .L121+48
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 35
+
+
+ 1343 008c FFF7FEFF 		bl	interrupt_StartEx
+ 1344              	.LVL87:
+ 1345              	.L100:
+ 384:main.c        ****         }
+ 385:main.c        ****         if(rxend){
+ 1346              		.loc 1 385 0
+ 1347 0090 6A4B     		ldr	r3, .L121+36
+ 1348 0092 93F83030 		ldrb	r3, [r3, #48]	@ zero_extendqisi2
+ 1349 0096 33B9     		cbnz	r3, .L101
+ 1350 0098 0DE0     		b	.L102
+ 1351              	.L103:
+ 386:main.c        ****             while (k>0){
+ 387:main.c        ****             formmot[k]=_NULL;
+ 1352              		.loc 1 387 0
+ 1353 009a 0021     		movs	r1, #0
+ 1354 009c 684A     		ldr	r2, .L121+40
+ 1355 009e D154     		strb	r1, [r2, r3]
+ 388:main.c        ****             k--;
+ 1356              		.loc 1 388 0
+ 1357 00a0 013B     		subs	r3, r3, #1
+ 1358 00a2 664A     		ldr	r2, .L121+36
+ 1359 00a4 1360     		str	r3, [r2]
+ 1360              	.L101:
+ 386:main.c        ****             while (k>0){
+ 1361              		.loc 1 386 0
+ 1362 00a6 654B     		ldr	r3, .L121+36
+ 1363 00a8 1B68     		ldr	r3, [r3]
+ 1364 00aa 002B     		cmp	r3, #0
+ 1365 00ac F5DC     		bgt	.L103
+ 389:main.c        ****             }
+ 390:main.c        ****             rxend=0;
+ 1366              		.loc 1 390 0
+ 1367 00ae 0022     		movs	r2, #0
+ 1368 00b0 624B     		ldr	r3, .L121+36
+ 1369 00b2 83F83020 		strb	r2, [r3, #48]
+ 1370              	.L102:
+ 391:main.c        ****         }
+ 392:main.c        ****         
+ 393:main.c        ****         if(keypadScan() != 'z'){
+ 1371              		.loc 1 393 0
+ 1372 00b6 FFF7FEFF 		bl	keypadScan
+ 1373              	.LVL88:
+ 1374 00ba 7A28     		cmp	r0, #122
+ 1375 00bc 29D0     		beq	.L104
+ 1376              	.LBB5:
+ 394:main.c        ****             char keypad=keypadScan();
+ 1377              		.loc 1 394 0
+ 1378 00be FFF7FEFF 		bl	keypadScan
+ 1379              	.LVL89:
+ 1380 00c2 0446     		mov	r4, r0
+ 1381              	.LVL90:
+ 395:main.c        ****             if(keypad == '*'){
+ 1382              		.loc 1 395 0
+ 1383 00c4 2A28     		cmp	r0, #42
+ 1384 00c6 06D1     		bne	.L105
+ 396:main.c        ****                 mot="alexis";
+ 1385              		.loc 1 396 0
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 36
+
+
+ 1386 00c8 604A     		ldr	r2, .L121+52
+ 1387 00ca 5E4B     		ldr	r3, .L121+44
+ 1388 00cc 1A60     		str	r2, [r3]
+ 397:main.c        ****                 interrupt_StartEx(MORSE);
+ 1389              		.loc 1 397 0
+ 1390 00ce 5E48     		ldr	r0, .L121+48
+ 1391              	.LVL91:
+ 1392 00d0 FFF7FEFF 		bl	interrupt_StartEx
+ 1393              	.LVL92:
+ 1394 00d4 1DE0     		b	.L104
+ 1395              	.LVL93:
+ 1396              	.L105:
+ 398:main.c        ****             }
+ 399:main.c        ****             else if(keypad == '#'){
+ 1397              		.loc 1 399 0
+ 1398 00d6 2328     		cmp	r0, #35
+ 1399 00d8 06D1     		bne	.L106
+ 400:main.c        ****                 mot="arthur";
+ 1400              		.loc 1 400 0
+ 1401 00da 5D4A     		ldr	r2, .L121+56
+ 1402 00dc 594B     		ldr	r3, .L121+44
+ 1403 00de 1A60     		str	r2, [r3]
+ 401:main.c        ****                 interrupt_StartEx(MORSE);
+ 1404              		.loc 1 401 0
+ 1405 00e0 5948     		ldr	r0, .L121+48
+ 1406              	.LVL94:
+ 1407 00e2 FFF7FEFF 		bl	interrupt_StartEx
+ 1408              	.LVL95:
+ 1409 00e6 14E0     		b	.L104
+ 1410              	.LVL96:
+ 1411              	.L106:
+ 402:main.c        ****             }
+ 403:main.c        ****             else if(keypad!= 'z'){
+ 1412              		.loc 1 403 0
+ 1413 00e8 7A28     		cmp	r0, #122
+ 1414 00ea 12D0     		beq	.L104
+ 404:main.c        ****                 if(lcdcount==8){LCD_Position(1,0);}
+ 1415              		.loc 1 404 0
+ 1416 00ec 082D     		cmp	r5, #8
+ 1417 00ee 03D1     		bne	.L107
+ 1418              		.loc 1 404 0 is_stmt 0 discriminator 1
+ 1419 00f0 0021     		movs	r1, #0
+ 1420 00f2 0120     		movs	r0, #1
+ 1421              	.LVL97:
+ 1422 00f4 FFF7FEFF 		bl	LCD_Position
+ 1423              	.LVL98:
+ 1424              	.L107:
+ 405:main.c        ****                 if(lcdcount==16){LCD_Position(0,0);}
+ 1425              		.loc 1 405 0 is_stmt 1
+ 1426 00f8 102D     		cmp	r5, #16
+ 1427 00fa 03D1     		bne	.L108
+ 1428              		.loc 1 405 0 is_stmt 0 discriminator 1
+ 1429 00fc 0021     		movs	r1, #0
+ 1430 00fe 0846     		mov	r0, r1
+ 1431 0100 FFF7FEFF 		bl	LCD_Position
+ 1432              	.LVL99:
+ 1433              	.L108:
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 37
+
+
+ 406:main.c        ****                 lcdcount++;
+ 1434              		.loc 1 406 0 is_stmt 1
+ 1435 0104 0135     		adds	r5, r5, #1
+ 1436              	.LVL100:
+ 407:main.c        ****                 LCD_PutChar(keypad);
+ 1437              		.loc 1 407 0
+ 1438 0106 2046     		mov	r0, r4
+ 1439 0108 FFF7FEFF 		bl	LCD_PutChar
+ 1440              	.LVL101:
+ 408:main.c        ****                 CyDelay(80);
+ 1441              		.loc 1 408 0
+ 1442 010c 5020     		movs	r0, #80
+ 1443 010e FFF7FEFF 		bl	CyDelay
+ 1444              	.LVL102:
+ 1445              	.L104:
+ 1446              	.LBE5:
+ 409:main.c        ****             }
+ 410:main.c        ****         }
+ 411:main.c        ****         AMux_1_FastSelect(0);
+ 1447              		.loc 1 411 0
+ 1448 0112 0020     		movs	r0, #0
+ 1449 0114 FFF7FEFF 		bl	AMux_1_FastSelect
+ 1450              	.LVL103:
+ 412:main.c        ****         if(ADC_CountsTo_mVolts(ADC_Read32())<1000){
+ 1451              		.loc 1 412 0
+ 1452 0118 FFF7FEFF 		bl	ADC_Read32
+ 1453              	.LVL104:
+ 1454 011c FFF7FEFF 		bl	ADC_CountsTo_mVolts
+ 1455              	.LVL105:
+ 1456 0120 B0F57A7F 		cmp	r0, #1000
+ 1457 0124 03DA     		bge	.L109
+ 413:main.c        ****             light=0;
+ 1458              		.loc 1 413 0
+ 1459 0126 0022     		movs	r2, #0
+ 1460 0128 4A4B     		ldr	r3, .L121+60
+ 1461 012a 1A70     		strb	r2, [r3]
+ 1462 012c 02E0     		b	.L110
+ 1463              	.L109:
+ 414:main.c        ****         }
+ 415:main.c        ****         else{
+ 416:main.c        ****             light=1;
+ 1464              		.loc 1 416 0
+ 1465 012e 0122     		movs	r2, #1
+ 1466 0130 484B     		ldr	r3, .L121+60
+ 1467 0132 1A70     		strb	r2, [r3]
+ 1468              	.L110:
+ 417:main.c        ****         }
+ 418:main.c        ****         
+ 419:main.c        ****         /* 4.5
+ 420:main.c        ****         overflow=0x80 & Timer_ReadStatusRegister();
+ 421:main.c        ****         if(overflow){
+ 422:main.c        ****             count++;
+ 423:main.c        ****             if (count==1000){
+ 424:main.c        ****                 if(allum){
+ 425:main.c        ****                     Pin_4_Write(1);
+ 426:main.c        ****                 }
+ 427:main.c        ****                 if(!allum){
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 38
+
+
+ 428:main.c        ****                     Pin_4_Write(0);
+ 429:main.c        ****                 }
+ 430:main.c        ****                 allum=!allum;
+ 431:main.c        ****                 count=0;
+ 432:main.c        ****             }
+ 433:main.c        ****         }*/
+ 434:main.c        ****         /* 4.6
+ 435:main.c        ****         overflow=0x80 & Timer_ReadStatusRegister();
+ 436:main.c        ****         if(overflow){
+ 437:main.c        ****             if (count==99){
+ 438:main.c        ****                 count=0;
+ 439:main.c        ****             }
+ 440:main.c        ****             VDAC8_1_SetValue(vec[count]*128);
+ 441:main.c        ****             count++;
+ 442:main.c        ****         }
+ 443:main.c        ****         */
+ 444:main.c        ****         
+ 445:main.c        ****         //SW1 HANDLER
+ 446:main.c        ****         if(SW1_Read()){
+ 1469              		.loc 1 446 0
+ 1470 0134 FFF7FEFF 		bl	SW1_Read
+ 1471              	.LVL106:
+ 1472 0138 28B1     		cbz	r0, .L111
+ 447:main.c        ****             pinsWrite(1);
+ 1473              		.loc 1 447 0
+ 1474 013a 0120     		movs	r0, #1
+ 1475 013c FFF7FEFF 		bl	pinsWrite
+ 1476              	.LVL107:
+ 448:main.c        ****             interrupt_StartEx(SW1_Handler);
+ 1477              		.loc 1 448 0
+ 1478 0140 4548     		ldr	r0, .L121+64
+ 1479 0142 FFF7FEFF 		bl	interrupt_StartEx
+ 1480              	.LVL108:
+ 1481              	.L111:
+ 449:main.c        ****         }
+ 450:main.c        ****         //SW2 HANDLER
+ 451:main.c        ****         if(SW2_Read() && countTimesw2==0){
+ 1482              		.loc 1 451 0
+ 1483 0146 FFF7FEFF 		bl	SW2_Read
+ 1484              	.LVL109:
+ 1485 014a 28B1     		cbz	r0, .L112
+ 1486              		.loc 1 451 0 is_stmt 0 discriminator 1
+ 1487 014c 3B4B     		ldr	r3, .L121+36
+ 1488 014e DB68     		ldr	r3, [r3, #12]
+ 1489 0150 13B9     		cbnz	r3, .L112
+ 452:main.c        ****             interrupt_StartEx(SW2_Handler);
+ 1490              		.loc 1 452 0 is_stmt 1
+ 1491 0152 4248     		ldr	r0, .L121+68
+ 1492 0154 FFF7FEFF 		bl	interrupt_StartEx
+ 1493              	.LVL110:
+ 1494              	.L112:
+ 453:main.c        ****         }
+ 454:main.c        ****         if(countTimesw2>=5000){
+ 1495              		.loc 1 454 0
+ 1496 0158 384B     		ldr	r3, .L121+36
+ 1497 015a DA68     		ldr	r2, [r3, #12]
+ 1498 015c 41F28733 		movw	r3, #4999
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 39
+
+
+ 1499 0160 9A42     		cmp	r2, r3
+ 1500 0162 08DD     		ble	.L113
+ 455:main.c        ****             CyDelay(1); //prevent the bug of fast clicking
+ 1501              		.loc 1 455 0
+ 1502 0164 0120     		movs	r0, #1
+ 1503 0166 FFF7FEFF 		bl	CyDelay
+ 1504              	.LVL111:
+ 456:main.c        ****             if(!SW2_Read()){
+ 1505              		.loc 1 456 0
+ 1506 016a FFF7FEFF 		bl	SW2_Read
+ 1507              	.LVL112:
+ 1508 016e 10B9     		cbnz	r0, .L113
+ 457:main.c        ****                 countTimesw2=0;
+ 1509              		.loc 1 457 0
+ 1510 0170 0022     		movs	r2, #0
+ 1511 0172 324B     		ldr	r3, .L121+36
+ 1512 0174 DA60     		str	r2, [r3, #12]
+ 1513              	.L113:
+ 458:main.c        ****             }
+ 459:main.c        ****         }
+ 460:main.c        ****         //SW3 HANDLER
+ 461:main.c        ****         if(SW3_Read() && countTimesw3==0){
+ 1514              		.loc 1 461 0
+ 1515 0176 FFF7FEFF 		bl	SW3_Read
+ 1516              	.LVL113:
+ 1517 017a 28B1     		cbz	r0, .L114
+ 1518              		.loc 1 461 0 is_stmt 0 discriminator 1
+ 1519 017c 2F4B     		ldr	r3, .L121+36
+ 1520 017e 1B69     		ldr	r3, [r3, #16]
+ 1521 0180 13B9     		cbnz	r3, .L114
+ 462:main.c        ****             interrupt_StartEx(SW3_Handler);
+ 1522              		.loc 1 462 0 is_stmt 1
+ 1523 0182 3748     		ldr	r0, .L121+72
+ 1524 0184 FFF7FEFF 		bl	interrupt_StartEx
+ 1525              	.LVL114:
+ 1526              	.L114:
+ 463:main.c        ****         }
+ 464:main.c        ****         if(countTimesw3>=15000){
+ 1527              		.loc 1 464 0
+ 1528 0188 2C4B     		ldr	r3, .L121+36
+ 1529 018a 1A69     		ldr	r2, [r3, #16]
+ 1530 018c 43F69723 		movw	r3, #14999
+ 1531 0190 9A42     		cmp	r2, r3
+ 1532 0192 08DD     		ble	.L115
+ 465:main.c        ****             CyDelay(1); //prevent the bug of fast clicking
+ 1533              		.loc 1 465 0
+ 1534 0194 0120     		movs	r0, #1
+ 1535 0196 FFF7FEFF 		bl	CyDelay
+ 1536              	.LVL115:
+ 466:main.c        ****             if(!SW3_Read()){
+ 1537              		.loc 1 466 0
+ 1538 019a FFF7FEFF 		bl	SW3_Read
+ 1539              	.LVL116:
+ 1540 019e 10B9     		cbnz	r0, .L115
+ 467:main.c        ****                 countTimesw3=0;
+ 1541              		.loc 1 467 0
+ 1542 01a0 0022     		movs	r2, #0
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 40
+
+
+ 1543 01a2 264B     		ldr	r3, .L121+36
+ 1544 01a4 1A61     		str	r2, [r3, #16]
+ 1545              	.L115:
+ 468:main.c        ****             }
+ 469:main.c        ****         }
+ 470:main.c        ****         //SW4
+ 471:main.c        ****         if(SW4_Read()){
+ 1546              		.loc 1 471 0
+ 1547 01a6 FFF7FEFF 		bl	SW4_Read
+ 1548              	.LVL117:
+ 1549 01aa 40B1     		cbz	r0, .L116
+ 472:main.c        ****             mode=!mode;
+ 1550              		.loc 1 472 0
+ 1551 01ac 2D4A     		ldr	r2, .L121+76
+ 1552 01ae 1378     		ldrb	r3, [r2]	@ zero_extendqisi2
+ 1553 01b0 83F00103 		eor	r3, r3, #1
+ 1554 01b4 1370     		strb	r3, [r2]
+ 1555              	.L117:
+ 473:main.c        ****             for(;SW4_Read();){}
+ 1556              		.loc 1 473 0 discriminator 1
+ 1557 01b6 FFF7FEFF 		bl	SW4_Read
+ 1558              	.LVL118:
+ 1559 01ba 0028     		cmp	r0, #0
+ 1560 01bc FBD1     		bne	.L117
+ 1561              	.L116:
+ 474:main.c        ****         }
+ 475:main.c        ****         AMux_1_FastSelect(1);
+ 1562              		.loc 1 475 0
+ 1563 01be 0120     		movs	r0, #1
+ 1564 01c0 FFF7FEFF 		bl	AMux_1_FastSelect
+ 1565              	.LVL119:
+ 476:main.c        ****         float val= (ADC_CountsTo_mVolts(ADC_Read32())/5.106)/10+26;
+ 1566              		.loc 1 476 0
+ 1567 01c4 FFF7FEFF 		bl	ADC_Read32
+ 1568              	.LVL120:
+ 1569 01c8 FFF7FEFF 		bl	ADC_CountsTo_mVolts
+ 1570              	.LVL121:
+ 1571 01cc FFF7FEFF 		bl	__aeabi_i2d
+ 1572              	.LVL122:
+ 1573 01d0 13A3     		adr	r3, .L121+8
+ 1574 01d2 D3E90023 		ldrd	r2, [r3]
+ 1575 01d6 FFF7FEFF 		bl	__aeabi_ddiv
+ 1576              	.LVL123:
+ 1577 01da 0022     		movs	r2, #0
+ 1578 01dc 224B     		ldr	r3, .L121+80
+ 1579 01de FFF7FEFF 		bl	__aeabi_ddiv
+ 1580              	.LVL124:
+ 1581 01e2 0022     		movs	r2, #0
+ 1582 01e4 214B     		ldr	r3, .L121+84
+ 1583 01e6 FFF7FEFF 		bl	__aeabi_dadd
+ 1584              	.LVL125:
+ 1585 01ea FFF7FEFF 		bl	__aeabi_d2f
+ 1586              	.LVL126:
+ 477:main.c        ****         if(light){
+ 1587              		.loc 1 477 0
+ 1588 01ee 194B     		ldr	r3, .L121+60
+ 1589 01f0 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 41
+
+
+ 1590 01f2 002B     		cmp	r3, #0
+ 1591 01f4 3FF440AF 		beq	.L99
+ 478:main.c        ****             if(mode){
+ 1592              		.loc 1 478 0
+ 1593 01f8 1A4B     		ldr	r3, .L121+76
+ 1594 01fa 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 1595 01fc 2BB1     		cbz	r3, .L119
+ 479:main.c        ****                 PWM_1_WriteCompare2(val);
+ 1596              		.loc 1 479 0
+ 1597 01fe FFF7FEFF 		bl	__aeabi_f2uiz
+ 1598              	.LVL127:
+ 1599 0202 80B2     		uxth	r0, r0
+ 1600 0204 FFF7FEFF 		bl	PWM_1_WriteCompare2
+ 1601              	.LVL128:
+ 1602 0208 36E7     		b	.L99
+ 1603              	.LVL129:
+ 1604              	.L119:
+ 480:main.c        ****             }
+ 481:main.c        ****             else{
+ 482:main.c        ****                 PWM_1_WriteCompare1(val);
+ 1605              		.loc 1 482 0
+ 1606 020a FFF7FEFF 		bl	__aeabi_f2uiz
+ 1607              	.LVL130:
+ 1608 020e 80B2     		uxth	r0, r0
+ 1609 0210 FFF7FEFF 		bl	PWM_1_WriteCompare1
+ 1610              	.LVL131:
+ 1611 0214 30E7     		b	.L99
+ 1612              	.L122:
+ 1613 0216 00BF     		.align	3
+ 1614              	.L121:
+ 1615 0218 F1D4C853 		.word	1405670641
+ 1616 021c FB210940 		.word	1074340347
+ 1617 0220 06819543 		.word	1133871366
+ 1618 0224 8B6C1440 		.word	1075080331
+ 1619 0228 00000000 		.word	uart_rx_Handler
+ 1620 022c 00004940 		.word	1078525952
+ 1621 0230 0000F03F 		.word	1072693248
+ 1622 0234 00000000 		.word	vec
+ 1623 0238 0C000000 		.word	.LC1
+ 1624 023c 00000000 		.word	.LANCHOR0
+ 1625 0240 00000000 		.word	formmot
+ 1626 0244 00000000 		.word	mot
+ 1627 0248 00000000 		.word	MORSE
+ 1628 024c 14000000 		.word	.LC2
+ 1629 0250 1C000000 		.word	.LC3
+ 1630 0254 00000000 		.word	light
+ 1631 0258 00000000 		.word	SW1_Handler
+ 1632 025c 00000000 		.word	SW2_Handler
+ 1633 0260 00000000 		.word	SW3_Handler
+ 1634 0264 00000000 		.word	mode
+ 1635 0268 00002440 		.word	1076101120
+ 1636 026c 00003A40 		.word	1077542912
+ 1637              	.LBE4:
+ 1638              		.cfi_endproc
+ 1639              	.LFE73:
+ 1640              		.size	main, .-main
+ 1641              		.global	semaphore_alphabet
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 42
+
+
+ 1642              		.comm	rxData_char,1,1
+ 1643              		.comm	rxData,1,1
+ 1644              		.global	morsetottimespace
+ 1645              		.global	k
+ 1646              		.global	morseint
+ 1647              		.global	morsecode
+ 1648              		.comm	formmot,8,4
+ 1649              		.comm	mot,4,4
+ 1650              		.global	flag
+ 1651              		.global	rxend
+ 1652              		.global	rxbegin
+ 1653              		.global	begin
+ 1654              		.comm	light,1,1
+ 1655              		.comm	mode,1,1
+ 1656              		.comm	vec,400,4
+ 1657              		.global	taah
+ 1658              		.global	ti
+ 1659              		.global	countTime
+ 1660              		.global	countTimesw3
+ 1661              		.global	countTimesw2
+ 1662              		.global	count
+ 1663              		.data
+ 1664              		.align	3
+ 1665              		.set	.LANCHOR1,. + 0
+ 1666              		.type	ti, %object
+ 1667              		.size	ti, 4
+ 1668              	ti:
+ 1669 0000 10270000 		.word	10000
+ 1670              		.type	taah, %object
+ 1671              		.size	taah, 4
+ 1672              	taah:
+ 1673 0004 30750000 		.word	30000
+ 1674              		.type	begin, %object
+ 1675              		.size	begin, 1
+ 1676              	begin:
+ 1677 0008 01       		.byte	1
+ 1678 0009 00000000 		.space	7
+ 1678      000000
+ 1679              		.type	semaphore_alphabet, %object
+ 1680              		.size	semaphore_alphabet, 624
+ 1681              	semaphore_alphabet:
+ 1682 0010 61       		.byte	97
+ 1683 0011 00000000 		.space	7
+ 1683      000000
+ 1684 0018 00000000 		.word	0
+ 1685 001c 00000000 		.word	0
+ 1686 0020 00000000 		.word	0
+ 1687 0024 00000000 		.word	0
+ 1688 0028 62       		.byte	98
+ 1689 0029 00000000 		.space	7
+ 1689      000000
+ 1690 0030 00000000 		.word	0
+ 1691 0034 00000000 		.word	0
+ 1692 0038 00000000 		.word	0
+ 1693 003c 00804640 		.word	1078362112
+ 1694 0040 63       		.byte	99
+ 1695 0041 00000000 		.space	7
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 43
+
+
+ 1695      000000
+ 1696 0048 00000000 		.word	0
+ 1697 004c 00000000 		.word	0
+ 1698 0050 00000000 		.word	0
+ 1699 0054 00805640 		.word	1079410688
+ 1700 0058 64       		.byte	100
+ 1701 0059 00000000 		.space	7
+ 1701      000000
+ 1702 0060 00000000 		.word	0
+ 1703 0064 00000000 		.word	0
+ 1704 0068 00000000 		.word	0
+ 1705 006c 00E06040 		.word	1080090624
+ 1706 0070 65       		.byte	101
+ 1707 0071 00000000 		.space	7
+ 1707      000000
+ 1708 0078 00000000 		.word	0
+ 1709 007c 00000000 		.word	0
+ 1710 0080 00000000 		.word	0
+ 1711 0084 00806640 		.word	1080459264
+ 1712 0088 66       		.byte	102
+ 1713 0089 00000000 		.space	7
+ 1713      000000
+ 1714 0090 00000000 		.word	0
+ 1715 0094 00804640 		.word	1078362112
+ 1716 0098 00000000 		.word	0
+ 1717 009c 00000000 		.word	0
+ 1718 00a0 67       		.byte	103
+ 1719 00a1 00000000 		.space	7
+ 1719      000000
+ 1720 00a8 00000000 		.word	0
+ 1721 00ac 00804640 		.word	1078362112
+ 1722 00b0 00000000 		.word	0
+ 1723 00b4 00804640 		.word	1078362112
+ 1724 00b8 68       		.byte	104
+ 1725 00b9 00000000 		.space	7
+ 1725      000000
+ 1726 00c0 00000000 		.word	0
+ 1727 00c4 00804640 		.word	1078362112
+ 1728 00c8 00000000 		.word	0
+ 1729 00cc 00805640 		.word	1079410688
+ 1730 00d0 69       		.byte	105
+ 1731 00d1 00000000 		.space	7
+ 1731      000000
+ 1732 00d8 00000000 		.word	0
+ 1733 00dc 00804640 		.word	1078362112
+ 1734 00e0 00000000 		.word	0
+ 1735 00e4 00E06040 		.word	1080090624
+ 1736 00e8 6A       		.byte	106
+ 1737 00e9 00000000 		.space	7
+ 1737      000000
+ 1738 00f0 00000000 		.word	0
+ 1739 00f4 00804640 		.word	1078362112
+ 1740 00f8 00000000 		.word	0
+ 1741 00fc 00806640 		.word	1080459264
+ 1742 0100 6B       		.byte	107
+ 1743 0101 00000000 		.space	7
+ 1743      000000
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 44
+
+
+ 1744 0108 00000000 		.word	0
+ 1745 010c 00805640 		.word	1079410688
+ 1746 0110 00000000 		.word	0
+ 1747 0114 00000000 		.word	0
+ 1748 0118 6C       		.byte	108
+ 1749 0119 00000000 		.space	7
+ 1749      000000
+ 1750 0120 00000000 		.word	0
+ 1751 0124 00805640 		.word	1079410688
+ 1752 0128 00000000 		.word	0
+ 1753 012c 00804640 		.word	1078362112
+ 1754 0130 6D       		.byte	109
+ 1755 0131 00000000 		.space	7
+ 1755      000000
+ 1756 0138 00000000 		.word	0
+ 1757 013c 00805640 		.word	1079410688
+ 1758 0140 00000000 		.word	0
+ 1759 0144 00805640 		.word	1079410688
+ 1760 0148 6E       		.byte	110
+ 1761 0149 00000000 		.space	7
+ 1761      000000
+ 1762 0150 00000000 		.word	0
+ 1763 0154 00805640 		.word	1079410688
+ 1764 0158 00000000 		.word	0
+ 1765 015c 00E06040 		.word	1080090624
+ 1766 0160 6F       		.byte	111
+ 1767 0161 00000000 		.space	7
+ 1767      000000
+ 1768 0168 00000000 		.word	0
+ 1769 016c 00805640 		.word	1079410688
+ 1770 0170 00000000 		.word	0
+ 1771 0174 00806640 		.word	1080459264
+ 1772 0178 70       		.byte	112
+ 1773 0179 00000000 		.space	7
+ 1773      000000
+ 1774 0180 00000000 		.word	0
+ 1775 0184 00E06040 		.word	1080090624
+ 1776 0188 00000000 		.word	0
+ 1777 018c 00000000 		.word	0
+ 1778 0190 71       		.byte	113
+ 1779 0191 00000000 		.space	7
+ 1779      000000
+ 1780 0198 00000000 		.word	0
+ 1781 019c 00E06040 		.word	1080090624
+ 1782 01a0 00000000 		.word	0
+ 1783 01a4 00804640 		.word	1078362112
+ 1784 01a8 72       		.byte	114
+ 1785 01a9 00000000 		.space	7
+ 1785      000000
+ 1786 01b0 00000000 		.word	0
+ 1787 01b4 00E06040 		.word	1080090624
+ 1788 01b8 00000000 		.word	0
+ 1789 01bc 00805640 		.word	1079410688
+ 1790 01c0 73       		.byte	115
+ 1791 01c1 00000000 		.space	7
+ 1791      000000
+ 1792 01c8 00000000 		.word	0
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 45
+
+
+ 1793 01cc 00E06040 		.word	1080090624
+ 1794 01d0 00000000 		.word	0
+ 1795 01d4 00E06040 		.word	1080090624
+ 1796 01d8 74       		.byte	116
+ 1797 01d9 00000000 		.space	7
+ 1797      000000
+ 1798 01e0 00000000 		.word	0
+ 1799 01e4 00E06040 		.word	1080090624
+ 1800 01e8 00000000 		.word	0
+ 1801 01ec 00806640 		.word	1080459264
+ 1802 01f0 75       		.byte	117
+ 1803 01f1 00000000 		.space	7
+ 1803      000000
+ 1804 01f8 00000000 		.word	0
+ 1805 01fc 00806640 		.word	1080459264
+ 1806 0200 00000000 		.word	0
+ 1807 0204 00000000 		.word	0
+ 1808 0208 76       		.byte	118
+ 1809 0209 00000000 		.space	7
+ 1809      000000
+ 1810 0210 00000000 		.word	0
+ 1811 0214 00806640 		.word	1080459264
+ 1812 0218 00000000 		.word	0
+ 1813 021c 00804640 		.word	1078362112
+ 1814 0220 77       		.byte	119
+ 1815 0221 00000000 		.space	7
+ 1815      000000
+ 1816 0228 00000000 		.word	0
+ 1817 022c 00806640 		.word	1080459264
+ 1818 0230 00000000 		.word	0
+ 1819 0234 00805640 		.word	1079410688
+ 1820 0238 78       		.byte	120
+ 1821 0239 00000000 		.space	7
+ 1821      000000
+ 1822 0240 00000000 		.word	0
+ 1823 0244 00806640 		.word	1080459264
+ 1824 0248 00000000 		.word	0
+ 1825 024c 00E06040 		.word	1080090624
+ 1826 0250 79       		.byte	121
+ 1827 0251 00000000 		.space	7
+ 1827      000000
+ 1828 0258 00000000 		.word	0
+ 1829 025c 00806640 		.word	1080459264
+ 1830 0260 00000000 		.word	0
+ 1831 0264 00806640 		.word	1080459264
+ 1832 0268 7A       		.byte	122
+ 1833 0269 00000000 		.space	7
+ 1833      000000
+ 1834 0270 00000000 		.word	0
+ 1835 0274 00C06340 		.word	1080279040
+ 1836 0278 00000000 		.word	0
+ 1837 027c 00C06340 		.word	1080279040
+ 1838              		.section	.rodata.str1.4,"aMS",%progbits,1
+ 1839              		.align	2
+ 1840              	.LC0:
+ 1841 0000 20554152 		.ascii	" UART err\000"
+ 1841      54206572 
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 46
+
+
+ 1841      7200
+ 1842 000a 0000     		.space	2
+ 1843              	.LC1:
+ 1844 000c 48656C6C 		.ascii	"Hello\012\000"
+ 1844      6F0A00
+ 1845 0013 00       		.space	1
+ 1846              	.LC2:
+ 1847 0014 616C6578 		.ascii	"alexis\000"
+ 1847      697300
+ 1848 001b 00       		.space	1
+ 1849              	.LC3:
+ 1850 001c 61727468 		.ascii	"arthur\000"
+ 1850      757200
+ 1851              		.bss
+ 1852              		.align	2
+ 1853              		.set	.LANCHOR0,. + 0
+ 1854              		.type	k, %object
+ 1855              		.size	k, 4
+ 1856              	k:
+ 1857 0000 00000000 		.space	4
+ 1858              		.type	rxbegin, %object
+ 1859              		.size	rxbegin, 1
+ 1860              	rxbegin:
+ 1861 0004 00       		.space	1
+ 1862 0005 000000   		.space	3
+ 1863              		.type	count, %object
+ 1864              		.size	count, 4
+ 1865              	count:
+ 1866 0008 00000000 		.space	4
+ 1867              		.type	countTimesw2, %object
+ 1868              		.size	countTimesw2, 4
+ 1869              	countTimesw2:
+ 1870 000c 00000000 		.space	4
+ 1871              		.type	countTimesw3, %object
+ 1872              		.size	countTimesw3, 4
+ 1873              	countTimesw3:
+ 1874 0010 00000000 		.space	4
+ 1875              		.type	morsecode, %object
+ 1876              		.size	morsecode, 16
+ 1877              	morsecode:
+ 1878 0014 00000000 		.space	16
+ 1878      00000000 
+ 1878      00000000 
+ 1878      00000000 
+ 1879              		.type	morsetottimespace, %object
+ 1880              		.size	morsetottimespace, 4
+ 1881              	morsetottimespace:
+ 1882 0024 00000000 		.space	4
+ 1883              		.type	morseint, %object
+ 1884              		.size	morseint, 4
+ 1885              	morseint:
+ 1886 0028 00000000 		.space	4
+ 1887              		.type	countTime, %object
+ 1888              		.size	countTime, 4
+ 1889              	countTime:
+ 1890 002c 00000000 		.space	4
+ 1891              		.type	rxend, %object
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 47
+
+
+ 1892              		.size	rxend, 1
+ 1893              	rxend:
+ 1894 0030 00       		.space	1
+ 1895              		.type	flag, %object
+ 1896              		.size	flag, 1
+ 1897              	flag:
+ 1898 0031 00       		.space	1
+ 1899              		.text
+ 1900              	.Letext0:
+ 1901              		.file 2 "c:\\program files (x86)\\cypress\\psoc creator\\4.3\\psoc creator\\import\\gnu\\arm\\5.4.
+ 1902              		.file 3 "c:\\program files (x86)\\cypress\\psoc creator\\4.3\\psoc creator\\import\\gnu\\arm\\5.4.
+ 1903              		.file 4 "Generated_Source\\PSoC5/cytypes.h"
+ 1904              		.file 5 "Generated_Source\\PSoC5/core_cm3.h"
+ 1905              		.file 6 "Generated_Source\\PSoC5/UART.h"
+ 1906              		.file 7 "Generated_Source\\PSoC5/LCD.h"
+ 1907              		.file 8 "Generated_Source\\PSoC5/Pin_1.h"
+ 1908              		.file 9 "Generated_Source\\PSoC5/Pin_2.h"
+ 1909              		.file 10 "Generated_Source\\PSoC5/Pin_3.h"
+ 1910              		.file 11 "Generated_Source\\PSoC5/Pin_4.h"
+ 1911              		.file 12 "Generated_Source\\PSoC5/Timer.h"
+ 1912              		.file 13 "Generated_Source\\PSoC5/VDAC8_1.h"
+ 1913              		.file 14 "Generated_Source\\PSoC5/SW1.h"
+ 1914              		.file 15 "Generated_Source\\PSoC5/interrupt.h"
+ 1915              		.file 16 "Generated_Source\\PSoC5/PWM_1.h"
+ 1916              		.file 17 "c:\\program files (x86)\\cypress\\psoc creator\\4.3\\psoc creator\\import\\gnu\\arm\\5.4
+ 1917              		.file 18 "keypad.h"
+ 1918              		.file 19 "Generated_Source\\PSoC5/CyLib.h"
+ 1919              		.file 20 "Generated_Source\\PSoC5/AMux_1.h"
+ 1920              		.file 21 "Generated_Source\\PSoC5/ADC.h"
+ 1921              		.file 22 "Generated_Source\\PSoC5/SW2.h"
+ 1922              		.file 23 "Generated_Source\\PSoC5/SW3.h"
+ 1923              		.file 24 "Generated_Source\\PSoC5/SW4.h"
+ 1924              		.file 25 "Generated_Source\\PSoC5/isr.h"
+ 1925              		.file 26 "c:\\program files (x86)\\cypress\\psoc creator\\4.3\\psoc creator\\import\\gnu\\arm\\5.4
+ 1926              		.section	.debug_info,"",%progbits
+ 1927              	.Ldebug_info0:
+ 1928 0000 240B0000 		.4byte	0xb24
+ 1929 0004 0400     		.2byte	0x4
+ 1930 0006 00000000 		.4byte	.Ldebug_abbrev0
+ 1931 000a 04       		.byte	0x4
+ 1932 000b 01       		.uleb128 0x1
+ 1933 000c 58040000 		.4byte	.LASF94
+ 1934 0010 0C       		.byte	0xc
+ 1935 0011 94030000 		.4byte	.LASF95
+ 1936 0015 00000000 		.4byte	.LASF96
+ 1937 0019 00000000 		.4byte	.Ldebug_ranges0+0
+ 1938 001d 00000000 		.4byte	0
+ 1939 0021 00000000 		.4byte	.Ldebug_line0
+ 1940 0025 02       		.uleb128 0x2
+ 1941 0026 01       		.byte	0x1
+ 1942 0027 06       		.byte	0x6
+ 1943 0028 6C000000 		.4byte	.LASF0
+ 1944 002c 03       		.uleb128 0x3
+ 1945 002d 06020000 		.4byte	.LASF4
+ 1946 0031 02       		.byte	0x2
+ 1947 0032 1D       		.byte	0x1d
+ 1948 0033 37000000 		.4byte	0x37
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 48
+
+
+ 1949 0037 02       		.uleb128 0x2
+ 1950 0038 01       		.byte	0x1
+ 1951 0039 08       		.byte	0x8
+ 1952 003a 9C020000 		.4byte	.LASF1
+ 1953 003e 02       		.uleb128 0x2
+ 1954 003f 02       		.byte	0x2
+ 1955 0040 05       		.byte	0x5
+ 1956 0041 A7000000 		.4byte	.LASF2
+ 1957 0045 02       		.uleb128 0x2
+ 1958 0046 02       		.byte	0x2
+ 1959 0047 07       		.byte	0x7
+ 1960 0048 48030000 		.4byte	.LASF3
+ 1961 004c 03       		.uleb128 0x3
+ 1962 004d F0030000 		.4byte	.LASF5
+ 1963 0051 02       		.byte	0x2
+ 1964 0052 3F       		.byte	0x3f
+ 1965 0053 57000000 		.4byte	0x57
+ 1966 0057 02       		.uleb128 0x2
+ 1967 0058 04       		.byte	0x4
+ 1968 0059 05       		.byte	0x5
+ 1969 005a D5010000 		.4byte	.LASF6
+ 1970 005e 02       		.uleb128 0x2
+ 1971 005f 04       		.byte	0x4
+ 1972 0060 07       		.byte	0x7
+ 1973 0061 AD030000 		.4byte	.LASF7
+ 1974 0065 02       		.uleb128 0x2
+ 1975 0066 08       		.byte	0x8
+ 1976 0067 05       		.byte	0x5
+ 1977 0068 A5010000 		.4byte	.LASF8
+ 1978 006c 02       		.uleb128 0x2
+ 1979 006d 08       		.byte	0x8
+ 1980 006e 07       		.byte	0x7
+ 1981 006f C6020000 		.4byte	.LASF9
+ 1982 0073 04       		.uleb128 0x4
+ 1983 0074 04       		.byte	0x4
+ 1984 0075 05       		.byte	0x5
+ 1985 0076 696E7400 		.ascii	"int\000"
+ 1986 007a 02       		.uleb128 0x2
+ 1987 007b 04       		.byte	0x4
+ 1988 007c 07       		.byte	0x7
+ 1989 007d E3020000 		.4byte	.LASF10
+ 1990 0081 03       		.uleb128 0x3
+ 1991 0082 47010000 		.4byte	.LASF11
+ 1992 0086 03       		.byte	0x3
+ 1993 0087 18       		.byte	0x18
+ 1994 0088 2C000000 		.4byte	0x2c
+ 1995 008c 03       		.uleb128 0x3
+ 1996 008d 37030000 		.4byte	.LASF12
+ 1997 0091 03       		.byte	0x3
+ 1998 0092 2C       		.byte	0x2c
+ 1999 0093 4C000000 		.4byte	0x4c
+ 2000 0097 05       		.uleb128 0x5
+ 2001 0098 6A010000 		.4byte	.LASF13
+ 2002 009c 04       		.byte	0x4
+ 2003 009d E401     		.2byte	0x1e4
+ 2004 009f 37000000 		.4byte	0x37
+ 2005 00a3 02       		.uleb128 0x2
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 49
+
+
+ 2006 00a4 04       		.byte	0x4
+ 2007 00a5 04       		.byte	0x4
+ 2008 00a6 9A010000 		.4byte	.LASF14
+ 2009 00aa 02       		.uleb128 0x2
+ 2010 00ab 08       		.byte	0x8
+ 2011 00ac 04       		.byte	0x4
+ 2012 00ad BF030000 		.4byte	.LASF15
+ 2013 00b1 05       		.uleb128 0x5
+ 2014 00b2 DB000000 		.4byte	.LASF16
+ 2015 00b6 04       		.byte	0x4
+ 2016 00b7 F501     		.2byte	0x1f5
+ 2017 00b9 BD000000 		.4byte	0xbd
+ 2018 00bd 02       		.uleb128 0x2
+ 2019 00be 01       		.byte	0x1
+ 2020 00bf 08       		.byte	0x8
+ 2021 00c0 26030000 		.4byte	.LASF17
+ 2022 00c4 02       		.uleb128 0x2
+ 2023 00c5 08       		.byte	0x8
+ 2024 00c6 04       		.byte	0x4
+ 2025 00c7 F3000000 		.4byte	.LASF18
+ 2026 00cb 02       		.uleb128 0x2
+ 2027 00cc 04       		.byte	0x4
+ 2028 00cd 07       		.byte	0x7
+ 2029 00ce C3000000 		.4byte	.LASF19
+ 2030 00d2 06       		.uleb128 0x6
+ 2031 00d3 04       		.byte	0x4
+ 2032 00d4 BD000000 		.4byte	0xbd
+ 2033 00d8 07       		.uleb128 0x7
+ 2034 00d9 BD000000 		.4byte	0xbd
+ 2035 00dd E8000000 		.4byte	0xe8
+ 2036 00e1 08       		.uleb128 0x8
+ 2037 00e2 CB000000 		.4byte	0xcb
+ 2038 00e6 07       		.byte	0x7
+ 2039 00e7 00       		.byte	0
+ 2040 00e8 09       		.uleb128 0x9
+ 2041 00e9 EE040000 		.4byte	.LASF97
+ 2042 00ed 18       		.byte	0x18
+ 2043 00ee 01       		.byte	0x1
+ 2044 00ef 23       		.byte	0x23
+ 2045 00f0 19010000 		.4byte	0x119
+ 2046 00f4 0A       		.uleb128 0xa
+ 2047 00f5 6C657400 		.ascii	"let\000"
+ 2048 00f9 01       		.byte	0x1
+ 2049 00fa 24       		.byte	0x24
+ 2050 00fb BD000000 		.4byte	0xbd
+ 2051 00ff 00       		.byte	0
+ 2052 0100 0A       		.uleb128 0xa
+ 2053 0101 6E756D00 		.ascii	"num\000"
+ 2054 0105 01       		.byte	0x1
+ 2055 0106 25       		.byte	0x25
+ 2056 0107 AA000000 		.4byte	0xaa
+ 2057 010b 08       		.byte	0x8
+ 2058 010c 0B       		.uleb128 0xb
+ 2059 010d 53040000 		.4byte	.LASF20
+ 2060 0111 01       		.byte	0x1
+ 2061 0112 26       		.byte	0x26
+ 2062 0113 AA000000 		.4byte	0xaa
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 50
+
+
+ 2063 0117 10       		.byte	0x10
+ 2064 0118 00       		.byte	0
+ 2065 0119 0C       		.uleb128 0xc
+ 2066 011a 5A010000 		.4byte	.LASF21
+ 2067 011e 01       		.byte	0x1
+ 2068 011f 4801     		.2byte	0x148
+ 2069 0121 00000000 		.4byte	.LFB72
+ 2070 0125 64000000 		.4byte	.LFE72-.LFB72
+ 2071 0129 01       		.uleb128 0x1
+ 2072 012a 9C       		.byte	0x9c
+ 2073 012b 8A010000 		.4byte	0x18a
+ 2074 012f 0D       		.uleb128 0xd
+ 2075 0130 17030000 		.4byte	.LASF31
+ 2076 0134 01       		.byte	0x1
+ 2077 0135 4901     		.2byte	0x149
+ 2078 0137 81000000 		.4byte	0x81
+ 2079 013b 00000000 		.4byte	.LLST0
+ 2080 013f 0E       		.uleb128 0xe
+ 2081 0140 06000000 		.4byte	.LVL0
+ 2082 0144 6F090000 		.4byte	0x96f
+ 2083 0148 0F       		.uleb128 0xf
+ 2084 0149 16000000 		.4byte	.LVL3
+ 2085 014d 7A090000 		.4byte	0x97a
+ 2086 0151 60010000 		.4byte	0x160
+ 2087 0155 10       		.uleb128 0x10
+ 2088 0156 01       		.uleb128 0x1
+ 2089 0157 50       		.byte	0x50
+ 2090 0158 01       		.uleb128 0x1
+ 2091 0159 31       		.byte	0x31
+ 2092 015a 10       		.uleb128 0x10
+ 2093 015b 01       		.uleb128 0x1
+ 2094 015c 51       		.byte	0x51
+ 2095 015d 01       		.uleb128 0x1
+ 2096 015e 30       		.byte	0x30
+ 2097 015f 00       		.byte	0
+ 2098 0160 0F       		.uleb128 0xf
+ 2099 0161 1C000000 		.4byte	.LVL4
+ 2100 0165 85090000 		.4byte	0x985
+ 2101 0169 77010000 		.4byte	0x177
+ 2102 016d 10       		.uleb128 0x10
+ 2103 016e 01       		.uleb128 0x1
+ 2104 016f 50       		.byte	0x50
+ 2105 0170 05       		.uleb128 0x5
+ 2106 0171 03       		.byte	0x3
+ 2107 0172 00000000 		.4byte	.LC0
+ 2108 0176 00       		.byte	0
+ 2109 0177 0E       		.uleb128 0xe
+ 2110 0178 2A000000 		.4byte	.LVL5
+ 2111 017c 90090000 		.4byte	0x990
+ 2112 0180 0E       		.uleb128 0xe
+ 2113 0181 46000000 		.4byte	.LVL6
+ 2114 0185 9B090000 		.4byte	0x99b
+ 2115 0189 00       		.byte	0
+ 2116 018a 11       		.uleb128 0x11
+ 2117 018b 29040000 		.4byte	.LASF22
+ 2118 018f 01       		.byte	0x1
+ 2119 0190 43       		.byte	0x43
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 51
+
+
+ 2120 0191 00000000 		.4byte	.LFB63
+ 2121 0195 2C000000 		.4byte	.LFE63-.LFB63
+ 2122 0199 01       		.uleb128 0x1
+ 2123 019a 9C       		.byte	0x9c
+ 2124 019b FB010000 		.4byte	0x1fb
+ 2125 019f 12       		.uleb128 0x12
+ 2126 01a0 1D010000 		.4byte	.LASF27
+ 2127 01a4 01       		.byte	0x1
+ 2128 01a5 43       		.byte	0x43
+ 2129 01a6 73000000 		.4byte	0x73
+ 2130 01aa 13000000 		.4byte	.LLST1
+ 2131 01ae 0F       		.uleb128 0xf
+ 2132 01af 12000000 		.4byte	.LVL10
+ 2133 01b3 A6090000 		.4byte	0x9a6
+ 2134 01b7 C2010000 		.4byte	0x1c2
+ 2135 01bb 10       		.uleb128 0x10
+ 2136 01bc 01       		.uleb128 0x1
+ 2137 01bd 50       		.byte	0x50
+ 2138 01be 02       		.uleb128 0x2
+ 2139 01bf 74       		.byte	0x74
+ 2140 01c0 00       		.sleb128 0
+ 2141 01c1 00       		.byte	0
+ 2142 01c2 0F       		.uleb128 0xf
+ 2143 01c3 18000000 		.4byte	.LVL11
+ 2144 01c7 B1090000 		.4byte	0x9b1
+ 2145 01cb D6010000 		.4byte	0x1d6
+ 2146 01cf 10       		.uleb128 0x10
+ 2147 01d0 01       		.uleb128 0x1
+ 2148 01d1 50       		.byte	0x50
+ 2149 01d2 02       		.uleb128 0x2
+ 2150 01d3 74       		.byte	0x74
+ 2151 01d4 00       		.sleb128 0
+ 2152 01d5 00       		.byte	0
+ 2153 01d6 0F       		.uleb128 0xf
+ 2154 01d7 1E000000 		.4byte	.LVL12
+ 2155 01db BC090000 		.4byte	0x9bc
+ 2156 01df EA010000 		.4byte	0x1ea
+ 2157 01e3 10       		.uleb128 0x10
+ 2158 01e4 01       		.uleb128 0x1
+ 2159 01e5 50       		.byte	0x50
+ 2160 01e6 02       		.uleb128 0x2
+ 2161 01e7 74       		.byte	0x74
+ 2162 01e8 00       		.sleb128 0
+ 2163 01e9 00       		.byte	0
+ 2164 01ea 13       		.uleb128 0x13
+ 2165 01eb 24000000 		.4byte	.LVL13
+ 2166 01ef C7090000 		.4byte	0x9c7
+ 2167 01f3 10       		.uleb128 0x10
+ 2168 01f4 01       		.uleb128 0x1
+ 2169 01f5 50       		.byte	0x50
+ 2170 01f6 02       		.uleb128 0x2
+ 2171 01f7 74       		.byte	0x74
+ 2172 01f8 00       		.sleb128 0
+ 2173 01f9 00       		.byte	0
+ 2174 01fa 00       		.byte	0
+ 2175 01fb 14       		.uleb128 0x14
+ 2176 01fc F3040000 		.4byte	.LASF98
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 52
+
+
+ 2177 0200 01       		.byte	0x1
+ 2178 0201 4D       		.byte	0x4d
+ 2179 0202 00000000 		.4byte	.LFB64
+ 2180 0206 40000000 		.4byte	.LFE64-.LFB64
+ 2181 020a 01       		.uleb128 0x1
+ 2182 020b 9C       		.byte	0x9c
+ 2183 020c 23020000 		.4byte	0x223
+ 2184 0210 0E       		.uleb128 0xe
+ 2185 0211 14000000 		.4byte	.LVL14
+ 2186 0215 D2090000 		.4byte	0x9d2
+ 2187 0219 0E       		.uleb128 0xe
+ 2188 021a 30000000 		.4byte	.LVL17
+ 2189 021e DD090000 		.4byte	0x9dd
+ 2190 0222 00       		.byte	0
+ 2191 0223 0C       		.uleb128 0xc
+ 2192 0224 81010000 		.4byte	.LASF23
+ 2193 0228 01       		.byte	0x1
+ 2194 0229 2001     		.2byte	0x120
+ 2195 022b 00000000 		.4byte	.LFB68
+ 2196 022f 16000000 		.4byte	.LFE68-.LFB68
+ 2197 0233 01       		.uleb128 0x1
+ 2198 0234 9C       		.byte	0x9c
+ 2199 0235 5E020000 		.4byte	0x25e
+ 2200 0239 0E       		.uleb128 0xe
+ 2201 023a 06000000 		.4byte	.LVL18
+ 2202 023e FB010000 		.4byte	0x1fb
+ 2203 0242 0E       		.uleb128 0xe
+ 2204 0243 0A000000 		.4byte	.LVL19
+ 2205 0247 E8090000 		.4byte	0x9e8
+ 2206 024b 0E       		.uleb128 0xe
+ 2207 024c 10000000 		.4byte	.LVL20
+ 2208 0250 8A010000 		.4byte	0x18a
+ 2209 0254 0E       		.uleb128 0xe
+ 2210 0255 14000000 		.4byte	.LVL21
+ 2211 0259 F3090000 		.4byte	0x9f3
+ 2212 025d 00       		.byte	0
+ 2213 025e 0C       		.uleb128 0xc
+ 2214 025f B3010000 		.4byte	.LASF24
+ 2215 0263 01       		.byte	0x1
+ 2216 0264 2801     		.2byte	0x128
+ 2217 0266 00000000 		.4byte	.LFB69
+ 2218 026a 34000000 		.4byte	.LFE69-.LFB69
+ 2219 026e 01       		.uleb128 0x1
+ 2220 026f 9C       		.byte	0x9c
+ 2221 0270 AD020000 		.4byte	0x2ad
+ 2222 0274 0F       		.uleb128 0xf
+ 2223 0275 14000000 		.4byte	.LVL22
+ 2224 0279 8A010000 		.4byte	0x18a
+ 2225 027d 87020000 		.4byte	0x287
+ 2226 0281 10       		.uleb128 0x10
+ 2227 0282 01       		.uleb128 0x1
+ 2228 0283 50       		.byte	0x50
+ 2229 0284 01       		.uleb128 0x1
+ 2230 0285 30       		.byte	0x30
+ 2231 0286 00       		.byte	0
+ 2232 0287 0E       		.uleb128 0xe
+ 2233 0288 18000000 		.4byte	.LVL23
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 53
+
+
+ 2234 028c F3090000 		.4byte	0x9f3
+ 2235 0290 0F       		.uleb128 0xf
+ 2236 0291 20000000 		.4byte	.LVL24
+ 2237 0295 8A010000 		.4byte	0x18a
+ 2238 0299 A3020000 		.4byte	0x2a3
+ 2239 029d 10       		.uleb128 0x10
+ 2240 029e 01       		.uleb128 0x1
+ 2241 029f 50       		.byte	0x50
+ 2242 02a0 01       		.uleb128 0x1
+ 2243 02a1 31       		.byte	0x31
+ 2244 02a2 00       		.byte	0
+ 2245 02a3 0E       		.uleb128 0xe
+ 2246 02a4 24000000 		.4byte	.LVL25
+ 2247 02a8 FB010000 		.4byte	0x1fb
+ 2248 02ac 00       		.byte	0
+ 2249 02ad 0C       		.uleb128 0xc
+ 2250 02ae DE010000 		.4byte	.LASF25
+ 2251 02b2 01       		.byte	0x1
+ 2252 02b3 3401     		.2byte	0x134
+ 2253 02b5 00000000 		.4byte	.LFB70
+ 2254 02b9 34000000 		.4byte	.LFE70-.LFB70
+ 2255 02bd 01       		.uleb128 0x1
+ 2256 02be 9C       		.byte	0x9c
+ 2257 02bf FC020000 		.4byte	0x2fc
+ 2258 02c3 0F       		.uleb128 0xf
+ 2259 02c4 14000000 		.4byte	.LVL26
+ 2260 02c8 8A010000 		.4byte	0x18a
+ 2261 02cc D6020000 		.4byte	0x2d6
+ 2262 02d0 10       		.uleb128 0x10
+ 2263 02d1 01       		.uleb128 0x1
+ 2264 02d2 50       		.byte	0x50
+ 2265 02d3 01       		.uleb128 0x1
+ 2266 02d4 30       		.byte	0x30
+ 2267 02d5 00       		.byte	0
+ 2268 02d6 0E       		.uleb128 0xe
+ 2269 02d7 18000000 		.4byte	.LVL27
+ 2270 02db F3090000 		.4byte	0x9f3
+ 2271 02df 0F       		.uleb128 0xf
+ 2272 02e0 20000000 		.4byte	.LVL28
+ 2273 02e4 8A010000 		.4byte	0x18a
+ 2274 02e8 F2020000 		.4byte	0x2f2
+ 2275 02ec 10       		.uleb128 0x10
+ 2276 02ed 01       		.uleb128 0x1
+ 2277 02ee 50       		.byte	0x50
+ 2278 02ef 01       		.uleb128 0x1
+ 2279 02f0 31       		.byte	0x31
+ 2280 02f1 00       		.byte	0
+ 2281 02f2 0E       		.uleb128 0xe
+ 2282 02f3 24000000 		.4byte	.LVL29
+ 2283 02f7 FB010000 		.4byte	0x1fb
+ 2284 02fb 00       		.byte	0
+ 2285 02fc 11       		.uleb128 0x11
+ 2286 02fd DD020000 		.4byte	.LASF26
+ 2287 0301 01       		.byte	0x1
+ 2288 0302 56       		.byte	0x56
+ 2289 0303 00000000 		.4byte	.LFB65
+ 2290 0307 14020000 		.4byte	.LFE65-.LFB65
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 54
+
+
+ 2291 030b 01       		.uleb128 0x1
+ 2292 030c 9C       		.byte	0x9c
+ 2293 030d 1F030000 		.4byte	0x31f
+ 2294 0311 15       		.uleb128 0x15
+ 2295 0312 F0020000 		.4byte	.LASF28
+ 2296 0316 01       		.byte	0x1
+ 2297 0317 56       		.byte	0x56
+ 2298 0318 BD000000 		.4byte	0xbd
+ 2299 031c 01       		.uleb128 0x1
+ 2300 031d 50       		.byte	0x50
+ 2301 031e 00       		.byte	0
+ 2302 031f 11       		.uleb128 0x11
+ 2303 0320 EA010000 		.4byte	.LASF29
+ 2304 0324 01       		.byte	0x1
+ 2305 0325 E2       		.byte	0xe2
+ 2306 0326 00000000 		.4byte	.LFB66
+ 2307 032a 50000000 		.4byte	.LFE66-.LFB66
+ 2308 032e 01       		.uleb128 0x1
+ 2309 032f 9C       		.byte	0x9c
+ 2310 0330 4D030000 		.4byte	0x34d
+ 2311 0334 12       		.uleb128 0x12
+ 2312 0335 F0020000 		.4byte	.LASF28
+ 2313 0339 01       		.byte	0x1
+ 2314 033a E2       		.byte	0xe2
+ 2315 033b BD000000 		.4byte	0xbd
+ 2316 033f 31000000 		.4byte	.LLST2
+ 2317 0343 0E       		.uleb128 0xe
+ 2318 0344 06000000 		.4byte	.LVL32
+ 2319 0348 FC020000 		.4byte	0x2fc
+ 2320 034c 00       		.byte	0
+ 2321 034d 16       		.uleb128 0x16
+ 2322 034e 7B020000 		.4byte	.LASF30
+ 2323 0352 01       		.byte	0x1
+ 2324 0353 ED       		.byte	0xed
+ 2325 0354 00000000 		.4byte	.LFB67
+ 2326 0358 18020000 		.4byte	.LFE67-.LFB67
+ 2327 035c 01       		.uleb128 0x1
+ 2328 035d 9C       		.byte	0x9c
+ 2329 035e 8E040000 		.4byte	0x48e
+ 2330 0362 17       		.uleb128 0x17
+ 2331 0363 C6000000 		.4byte	.LBB2
+ 2332 0367 6E000000 		.4byte	.LBE2-.LBB2
+ 2333 036b 90030000 		.4byte	0x390
+ 2334 036f 18       		.uleb128 0x18
+ 2335 0370 626100   		.ascii	"ba\000"
+ 2336 0373 01       		.byte	0x1
+ 2337 0374 FB       		.byte	0xfb
+ 2338 0375 73000000 		.4byte	0x73
+ 2339 0379 52000000 		.4byte	.LLST3
+ 2340 037d 0E       		.uleb128 0xe
+ 2341 037e 0E010000 		.4byte	.LVL47
+ 2342 0382 FE090000 		.4byte	0x9fe
+ 2343 0386 0E       		.uleb128 0xe
+ 2344 0387 2E010000 		.4byte	.LVL51
+ 2345 038b 090A0000 		.4byte	0xa09
+ 2346 038f 00       		.byte	0
+ 2347 0390 0E       		.uleb128 0xe
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 55
+
+
+ 2348 0391 1A000000 		.4byte	.LVL33
+ 2349 0395 1F030000 		.4byte	0x31f
+ 2350 0399 0F       		.uleb128 0xf
+ 2351 039a 2A000000 		.4byte	.LVL34
+ 2352 039e 140A0000 		.4byte	0xa14
+ 2353 03a2 AD030000 		.4byte	0x3ad
+ 2354 03a6 10       		.uleb128 0x10
+ 2355 03a7 01       		.uleb128 0x1
+ 2356 03a8 50       		.byte	0x50
+ 2357 03a9 02       		.uleb128 0x2
+ 2358 03aa 08       		.byte	0x8
+ 2359 03ab 2E       		.byte	0x2e
+ 2360 03ac 00       		.byte	0
+ 2361 03ad 0F       		.uleb128 0xf
+ 2362 03ae 3C000000 		.4byte	.LVL35
+ 2363 03b2 140A0000 		.4byte	0xa14
+ 2364 03b6 C1030000 		.4byte	0x3c1
+ 2365 03ba 10       		.uleb128 0x10
+ 2366 03bb 01       		.uleb128 0x1
+ 2367 03bc 50       		.byte	0x50
+ 2368 03bd 02       		.uleb128 0x2
+ 2369 03be 08       		.byte	0x8
+ 2370 03bf 2D       		.byte	0x2d
+ 2371 03c0 00       		.byte	0
+ 2372 03c1 0F       		.uleb128 0xf
+ 2373 03c2 52000000 		.4byte	.LVL36
+ 2374 03c6 140A0000 		.4byte	0xa14
+ 2375 03ca D5030000 		.4byte	0x3d5
+ 2376 03ce 10       		.uleb128 0x10
+ 2377 03cf 01       		.uleb128 0x1
+ 2378 03d0 50       		.byte	0x50
+ 2379 03d1 02       		.uleb128 0x2
+ 2380 03d2 08       		.byte	0x8
+ 2381 03d3 2E       		.byte	0x2e
+ 2382 03d4 00       		.byte	0
+ 2383 03d5 0F       		.uleb128 0xf
+ 2384 03d6 68000000 		.4byte	.LVL37
+ 2385 03da 140A0000 		.4byte	0xa14
+ 2386 03de E9030000 		.4byte	0x3e9
+ 2387 03e2 10       		.uleb128 0x10
+ 2388 03e3 01       		.uleb128 0x1
+ 2389 03e4 50       		.byte	0x50
+ 2390 03e5 02       		.uleb128 0x2
+ 2391 03e6 08       		.byte	0x8
+ 2392 03e7 2D       		.byte	0x2d
+ 2393 03e8 00       		.byte	0
+ 2394 03e9 0F       		.uleb128 0xf
+ 2395 03ea 7E000000 		.4byte	.LVL38
+ 2396 03ee 140A0000 		.4byte	0xa14
+ 2397 03f2 FD030000 		.4byte	0x3fd
+ 2398 03f6 10       		.uleb128 0x10
+ 2399 03f7 01       		.uleb128 0x1
+ 2400 03f8 50       		.byte	0x50
+ 2401 03f9 02       		.uleb128 0x2
+ 2402 03fa 08       		.byte	0x8
+ 2403 03fb 2E       		.byte	0x2e
+ 2404 03fc 00       		.byte	0
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 56
+
+
+ 2405 03fd 0F       		.uleb128 0xf
+ 2406 03fe 94000000 		.4byte	.LVL39
+ 2407 0402 140A0000 		.4byte	0xa14
+ 2408 0406 11040000 		.4byte	0x411
+ 2409 040a 10       		.uleb128 0x10
+ 2410 040b 01       		.uleb128 0x1
+ 2411 040c 50       		.byte	0x50
+ 2412 040d 02       		.uleb128 0x2
+ 2413 040e 08       		.byte	0x8
+ 2414 040f 2D       		.byte	0x2d
+ 2415 0410 00       		.byte	0
+ 2416 0411 0F       		.uleb128 0xf
+ 2417 0412 AA000000 		.4byte	.LVL40
+ 2418 0416 140A0000 		.4byte	0xa14
+ 2419 041a 25040000 		.4byte	0x425
+ 2420 041e 10       		.uleb128 0x10
+ 2421 041f 01       		.uleb128 0x1
+ 2422 0420 50       		.byte	0x50
+ 2423 0421 02       		.uleb128 0x2
+ 2424 0422 08       		.byte	0x8
+ 2425 0423 2E       		.byte	0x2e
+ 2426 0424 00       		.byte	0
+ 2427 0425 0F       		.uleb128 0xf
+ 2428 0426 C0000000 		.4byte	.LVL41
+ 2429 042a 140A0000 		.4byte	0xa14
+ 2430 042e 39040000 		.4byte	0x439
+ 2431 0432 10       		.uleb128 0x10
+ 2432 0433 01       		.uleb128 0x1
+ 2433 0434 50       		.byte	0x50
+ 2434 0435 02       		.uleb128 0x2
+ 2435 0436 08       		.byte	0x8
+ 2436 0437 2D       		.byte	0x2d
+ 2437 0438 00       		.byte	0
+ 2438 0439 0F       		.uleb128 0xf
+ 2439 043a C6000000 		.4byte	.LVL42
+ 2440 043e 140A0000 		.4byte	0xa14
+ 2441 0442 4D040000 		.4byte	0x44d
+ 2442 0446 10       		.uleb128 0x10
+ 2443 0447 01       		.uleb128 0x1
+ 2444 0448 50       		.byte	0x50
+ 2445 0449 02       		.uleb128 0x2
+ 2446 044a 08       		.byte	0x8
+ 2447 044b 20       		.byte	0x20
+ 2448 044c 00       		.byte	0
+ 2449 044d 0E       		.uleb128 0xe
+ 2450 044e 4C010000 		.4byte	.LVL54
+ 2451 0452 D2090000 		.4byte	0x9d2
+ 2452 0456 0E       		.uleb128 0xe
+ 2453 0457 7A010000 		.4byte	.LVL55
+ 2454 045b 1F0A0000 		.4byte	0xa1f
+ 2455 045f 0F       		.uleb128 0xf
+ 2456 0460 90010000 		.4byte	.LVL56
+ 2457 0464 140A0000 		.4byte	0xa14
+ 2458 0468 72040000 		.4byte	0x472
+ 2459 046c 10       		.uleb128 0x10
+ 2460 046d 01       		.uleb128 0x1
+ 2461 046e 50       		.byte	0x50
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 57
+
+
+ 2462 046f 01       		.uleb128 0x1
+ 2463 0470 3A       		.byte	0x3a
+ 2464 0471 00       		.byte	0
+ 2465 0472 0E       		.uleb128 0xe
+ 2466 0473 94010000 		.4byte	.LVL57
+ 2467 0477 F3090000 		.4byte	0x9f3
+ 2468 047b 0E       		.uleb128 0xe
+ 2469 047c EE010000 		.4byte	.LVL58
+ 2470 0480 FB010000 		.4byte	0x1fb
+ 2471 0484 0E       		.uleb128 0xe
+ 2472 0485 F4010000 		.4byte	.LVL59
+ 2473 0489 D2090000 		.4byte	0x9d2
+ 2474 048d 00       		.byte	0
+ 2475 048e 0C       		.uleb128 0xc
+ 2476 048f 10020000 		.4byte	.LASF32
+ 2477 0493 01       		.byte	0x1
+ 2478 0494 4001     		.2byte	0x140
+ 2479 0496 00000000 		.4byte	.LFB71
+ 2480 049a 16000000 		.4byte	.LFE71-.LFB71
+ 2481 049e 01       		.uleb128 0x1
+ 2482 049f 9C       		.byte	0x9c
+ 2483 04a0 C9040000 		.4byte	0x4c9
+ 2484 04a4 0E       		.uleb128 0xe
+ 2485 04a5 06000000 		.4byte	.LVL60
+ 2486 04a9 FB010000 		.4byte	0x1fb
+ 2487 04ad 0E       		.uleb128 0xe
+ 2488 04ae 0A000000 		.4byte	.LVL61
+ 2489 04b2 E8090000 		.4byte	0x9e8
+ 2490 04b6 0E       		.uleb128 0xe
+ 2491 04b7 10000000 		.4byte	.LVL62
+ 2492 04bb 8A010000 		.4byte	0x18a
+ 2493 04bf 0E       		.uleb128 0xe
+ 2494 04c0 14000000 		.4byte	.LVL63
+ 2495 04c4 F3090000 		.4byte	0x9f3
+ 2496 04c8 00       		.byte	0
+ 2497 04c9 19       		.uleb128 0x19
+ 2498 04ca 2B030000 		.4byte	.LASF99
+ 2499 04ce 01       		.byte	0x1
+ 2500 04cf 6201     		.2byte	0x162
+ 2501 04d1 73000000 		.4byte	0x73
+ 2502 04d5 00000000 		.4byte	.LFB73
+ 2503 04d9 70020000 		.4byte	.LFE73-.LFB73
+ 2504 04dd 01       		.uleb128 0x1
+ 2505 04de 9C       		.byte	0x9c
+ 2506 04df B4070000 		.4byte	0x7b4
+ 2507 04e3 0D       		.uleb128 0xd
+ 2508 04e4 01030000 		.4byte	.LASF33
+ 2509 04e8 01       		.byte	0x1
+ 2510 04e9 7501     		.2byte	0x175
+ 2511 04eb 73000000 		.4byte	0x73
+ 2512 04ef 71000000 		.4byte	.LLST4
+ 2513 04f3 17       		.uleb128 0x17
+ 2514 04f4 0A000000 		.4byte	.LBB3
+ 2515 04f8 38000000 		.4byte	.LBE3-.LBB3
+ 2516 04fc 18050000 		.4byte	0x518
+ 2517 0500 1A       		.uleb128 0x1a
+ 2518 0501 6900     		.ascii	"i\000"
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 58
+
+
+ 2519 0503 01       		.byte	0x1
+ 2520 0504 6601     		.2byte	0x166
+ 2521 0506 73000000 		.4byte	0x73
+ 2522 050a 90000000 		.4byte	.LLST5
+ 2523 050e 0E       		.uleb128 0xe
+ 2524 050f 2A000000 		.4byte	.LVL70
+ 2525 0513 2A0A0000 		.4byte	0xa2a
+ 2526 0517 00       		.byte	0
+ 2527 0518 17       		.uleb128 0x17
+ 2528 0519 78000000 		.4byte	.LBB4
+ 2529 051d F8010000 		.4byte	.LBE4-.LBB4
+ 2530 0521 18070000 		.4byte	0x718
+ 2531 0525 1A       		.uleb128 0x1a
+ 2532 0526 76616C00 		.ascii	"val\000"
+ 2533 052a 01       		.byte	0x1
+ 2534 052b DC01     		.2byte	0x1dc
+ 2535 052d A3000000 		.4byte	0xa3
+ 2536 0531 AF000000 		.4byte	.LLST6
+ 2537 0535 17       		.uleb128 0x17
+ 2538 0536 BE000000 		.4byte	.LBB5
+ 2539 053a 54000000 		.4byte	.LBE5-.LBB5
+ 2540 053e DE050000 		.4byte	0x5de
+ 2541 0542 0D       		.uleb128 0xd
+ 2542 0543 16010000 		.4byte	.LASF34
+ 2543 0547 01       		.byte	0x1
+ 2544 0548 8A01     		.2byte	0x18a
+ 2545 054a BD000000 		.4byte	0xbd
+ 2546 054e CD000000 		.4byte	.LLST7
+ 2547 0552 0E       		.uleb128 0xe
+ 2548 0553 C2000000 		.4byte	.LVL89
+ 2549 0557 350A0000 		.4byte	0xa35
+ 2550 055b 0F       		.uleb128 0xf
+ 2551 055c D4000000 		.4byte	.LVL92
+ 2552 0560 400A0000 		.4byte	0xa40
+ 2553 0564 72050000 		.4byte	0x572
+ 2554 0568 10       		.uleb128 0x10
+ 2555 0569 01       		.uleb128 0x1
+ 2556 056a 50       		.byte	0x50
+ 2557 056b 05       		.uleb128 0x5
+ 2558 056c 03       		.byte	0x3
+ 2559 056d 00000000 		.4byte	MORSE
+ 2560 0571 00       		.byte	0
+ 2561 0572 0F       		.uleb128 0xf
+ 2562 0573 E6000000 		.4byte	.LVL95
+ 2563 0577 400A0000 		.4byte	0xa40
+ 2564 057b 89050000 		.4byte	0x589
+ 2565 057f 10       		.uleb128 0x10
+ 2566 0580 01       		.uleb128 0x1
+ 2567 0581 50       		.byte	0x50
+ 2568 0582 05       		.uleb128 0x5
+ 2569 0583 03       		.byte	0x3
+ 2570 0584 00000000 		.4byte	MORSE
+ 2571 0588 00       		.byte	0
+ 2572 0589 0F       		.uleb128 0xf
+ 2573 058a F8000000 		.4byte	.LVL98
+ 2574 058e 7A090000 		.4byte	0x97a
+ 2575 0592 A1050000 		.4byte	0x5a1
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 59
+
+
+ 2576 0596 10       		.uleb128 0x10
+ 2577 0597 01       		.uleb128 0x1
+ 2578 0598 50       		.byte	0x50
+ 2579 0599 01       		.uleb128 0x1
+ 2580 059a 31       		.byte	0x31
+ 2581 059b 10       		.uleb128 0x10
+ 2582 059c 01       		.uleb128 0x1
+ 2583 059d 51       		.byte	0x51
+ 2584 059e 01       		.uleb128 0x1
+ 2585 059f 30       		.byte	0x30
+ 2586 05a0 00       		.byte	0
+ 2587 05a1 0F       		.uleb128 0xf
+ 2588 05a2 04010000 		.4byte	.LVL99
+ 2589 05a6 7A090000 		.4byte	0x97a
+ 2590 05aa B9050000 		.4byte	0x5b9
+ 2591 05ae 10       		.uleb128 0x10
+ 2592 05af 01       		.uleb128 0x1
+ 2593 05b0 50       		.byte	0x50
+ 2594 05b1 01       		.uleb128 0x1
+ 2595 05b2 30       		.byte	0x30
+ 2596 05b3 10       		.uleb128 0x10
+ 2597 05b4 01       		.uleb128 0x1
+ 2598 05b5 51       		.byte	0x51
+ 2599 05b6 01       		.uleb128 0x1
+ 2600 05b7 30       		.byte	0x30
+ 2601 05b8 00       		.byte	0
+ 2602 05b9 0F       		.uleb128 0xf
+ 2603 05ba 0C010000 		.4byte	.LVL101
+ 2604 05be 9B090000 		.4byte	0x99b
+ 2605 05c2 CD050000 		.4byte	0x5cd
+ 2606 05c6 10       		.uleb128 0x10
+ 2607 05c7 01       		.uleb128 0x1
+ 2608 05c8 50       		.byte	0x50
+ 2609 05c9 02       		.uleb128 0x2
+ 2610 05ca 74       		.byte	0x74
+ 2611 05cb 00       		.sleb128 0
+ 2612 05cc 00       		.byte	0
+ 2613 05cd 13       		.uleb128 0x13
+ 2614 05ce 12010000 		.4byte	.LVL102
+ 2615 05d2 4B0A0000 		.4byte	0xa4b
+ 2616 05d6 10       		.uleb128 0x10
+ 2617 05d7 01       		.uleb128 0x1
+ 2618 05d8 50       		.byte	0x50
+ 2619 05d9 02       		.uleb128 0x2
+ 2620 05da 08       		.byte	0x8
+ 2621 05db 50       		.byte	0x50
+ 2622 05dc 00       		.byte	0
+ 2623 05dd 00       		.byte	0
+ 2624 05de 0F       		.uleb128 0xf
+ 2625 05df 90000000 		.4byte	.LVL87
+ 2626 05e3 400A0000 		.4byte	0xa40
+ 2627 05e7 F5050000 		.4byte	0x5f5
+ 2628 05eb 10       		.uleb128 0x10
+ 2629 05ec 01       		.uleb128 0x1
+ 2630 05ed 50       		.byte	0x50
+ 2631 05ee 05       		.uleb128 0x5
+ 2632 05ef 03       		.byte	0x3
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 60
+
+
+ 2633 05f0 00000000 		.4byte	MORSE
+ 2634 05f4 00       		.byte	0
+ 2635 05f5 0E       		.uleb128 0xe
+ 2636 05f6 BA000000 		.4byte	.LVL88
+ 2637 05fa 350A0000 		.4byte	0xa35
+ 2638 05fe 0F       		.uleb128 0xf
+ 2639 05ff 18010000 		.4byte	.LVL103
+ 2640 0603 560A0000 		.4byte	0xa56
+ 2641 0607 11060000 		.4byte	0x611
+ 2642 060b 10       		.uleb128 0x10
+ 2643 060c 01       		.uleb128 0x1
+ 2644 060d 50       		.byte	0x50
+ 2645 060e 01       		.uleb128 0x1
+ 2646 060f 30       		.byte	0x30
+ 2647 0610 00       		.byte	0
+ 2648 0611 0E       		.uleb128 0xe
+ 2649 0612 1C010000 		.4byte	.LVL104
+ 2650 0616 610A0000 		.4byte	0xa61
+ 2651 061a 0E       		.uleb128 0xe
+ 2652 061b 20010000 		.4byte	.LVL105
+ 2653 061f 6C0A0000 		.4byte	0xa6c
+ 2654 0623 0E       		.uleb128 0xe
+ 2655 0624 38010000 		.4byte	.LVL106
+ 2656 0628 E8090000 		.4byte	0x9e8
+ 2657 062c 0F       		.uleb128 0xf
+ 2658 062d 40010000 		.4byte	.LVL107
+ 2659 0631 8A010000 		.4byte	0x18a
+ 2660 0635 3F060000 		.4byte	0x63f
+ 2661 0639 10       		.uleb128 0x10
+ 2662 063a 01       		.uleb128 0x1
+ 2663 063b 50       		.byte	0x50
+ 2664 063c 01       		.uleb128 0x1
+ 2665 063d 31       		.byte	0x31
+ 2666 063e 00       		.byte	0
+ 2667 063f 0F       		.uleb128 0xf
+ 2668 0640 46010000 		.4byte	.LVL108
+ 2669 0644 400A0000 		.4byte	0xa40
+ 2670 0648 56060000 		.4byte	0x656
+ 2671 064c 10       		.uleb128 0x10
+ 2672 064d 01       		.uleb128 0x1
+ 2673 064e 50       		.byte	0x50
+ 2674 064f 05       		.uleb128 0x5
+ 2675 0650 03       		.byte	0x3
+ 2676 0651 00000000 		.4byte	SW1_Handler
+ 2677 0655 00       		.byte	0
+ 2678 0656 0E       		.uleb128 0xe
+ 2679 0657 4A010000 		.4byte	.LVL109
+ 2680 065b 770A0000 		.4byte	0xa77
+ 2681 065f 0F       		.uleb128 0xf
+ 2682 0660 58010000 		.4byte	.LVL110
+ 2683 0664 400A0000 		.4byte	0xa40
+ 2684 0668 76060000 		.4byte	0x676
+ 2685 066c 10       		.uleb128 0x10
+ 2686 066d 01       		.uleb128 0x1
+ 2687 066e 50       		.byte	0x50
+ 2688 066f 05       		.uleb128 0x5
+ 2689 0670 03       		.byte	0x3
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 61
+
+
+ 2690 0671 00000000 		.4byte	SW2_Handler
+ 2691 0675 00       		.byte	0
+ 2692 0676 0F       		.uleb128 0xf
+ 2693 0677 6A010000 		.4byte	.LVL111
+ 2694 067b 4B0A0000 		.4byte	0xa4b
+ 2695 067f 89060000 		.4byte	0x689
+ 2696 0683 10       		.uleb128 0x10
+ 2697 0684 01       		.uleb128 0x1
+ 2698 0685 50       		.byte	0x50
+ 2699 0686 01       		.uleb128 0x1
+ 2700 0687 31       		.byte	0x31
+ 2701 0688 00       		.byte	0
+ 2702 0689 0E       		.uleb128 0xe
+ 2703 068a 6E010000 		.4byte	.LVL112
+ 2704 068e 770A0000 		.4byte	0xa77
+ 2705 0692 0E       		.uleb128 0xe
+ 2706 0693 7A010000 		.4byte	.LVL113
+ 2707 0697 820A0000 		.4byte	0xa82
+ 2708 069b 0F       		.uleb128 0xf
+ 2709 069c 88010000 		.4byte	.LVL114
+ 2710 06a0 400A0000 		.4byte	0xa40
+ 2711 06a4 B2060000 		.4byte	0x6b2
+ 2712 06a8 10       		.uleb128 0x10
+ 2713 06a9 01       		.uleb128 0x1
+ 2714 06aa 50       		.byte	0x50
+ 2715 06ab 05       		.uleb128 0x5
+ 2716 06ac 03       		.byte	0x3
+ 2717 06ad 00000000 		.4byte	SW3_Handler
+ 2718 06b1 00       		.byte	0
+ 2719 06b2 0F       		.uleb128 0xf
+ 2720 06b3 9A010000 		.4byte	.LVL115
+ 2721 06b7 4B0A0000 		.4byte	0xa4b
+ 2722 06bb C5060000 		.4byte	0x6c5
+ 2723 06bf 10       		.uleb128 0x10
+ 2724 06c0 01       		.uleb128 0x1
+ 2725 06c1 50       		.byte	0x50
+ 2726 06c2 01       		.uleb128 0x1
+ 2727 06c3 31       		.byte	0x31
+ 2728 06c4 00       		.byte	0
+ 2729 06c5 0E       		.uleb128 0xe
+ 2730 06c6 9E010000 		.4byte	.LVL116
+ 2731 06ca 820A0000 		.4byte	0xa82
+ 2732 06ce 0E       		.uleb128 0xe
+ 2733 06cf AA010000 		.4byte	.LVL117
+ 2734 06d3 8D0A0000 		.4byte	0xa8d
+ 2735 06d7 0E       		.uleb128 0xe
+ 2736 06d8 BA010000 		.4byte	.LVL118
+ 2737 06dc 8D0A0000 		.4byte	0xa8d
+ 2738 06e0 0F       		.uleb128 0xf
+ 2739 06e1 C4010000 		.4byte	.LVL119
+ 2740 06e5 560A0000 		.4byte	0xa56
+ 2741 06e9 F3060000 		.4byte	0x6f3
+ 2742 06ed 10       		.uleb128 0x10
+ 2743 06ee 01       		.uleb128 0x1
+ 2744 06ef 50       		.byte	0x50
+ 2745 06f0 01       		.uleb128 0x1
+ 2746 06f1 31       		.byte	0x31
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 62
+
+
+ 2747 06f2 00       		.byte	0
+ 2748 06f3 0E       		.uleb128 0xe
+ 2749 06f4 C8010000 		.4byte	.LVL120
+ 2750 06f8 610A0000 		.4byte	0xa61
+ 2751 06fc 0E       		.uleb128 0xe
+ 2752 06fd CC010000 		.4byte	.LVL121
+ 2753 0701 6C0A0000 		.4byte	0xa6c
+ 2754 0705 0E       		.uleb128 0xe
+ 2755 0706 08020000 		.4byte	.LVL128
+ 2756 070a FE090000 		.4byte	0x9fe
+ 2757 070e 0E       		.uleb128 0xe
+ 2758 070f 14020000 		.4byte	.LVL131
+ 2759 0713 090A0000 		.4byte	0xa09
+ 2760 0717 00       		.byte	0
+ 2761 0718 0F       		.uleb128 0xf
+ 2762 0719 08000000 		.4byte	.LVL64
+ 2763 071d 980A0000 		.4byte	0xa98
+ 2764 0721 2F070000 		.4byte	0x72f
+ 2765 0725 10       		.uleb128 0x10
+ 2766 0726 01       		.uleb128 0x1
+ 2767 0727 50       		.byte	0x50
+ 2768 0728 05       		.uleb128 0x5
+ 2769 0729 03       		.byte	0x3
+ 2770 072a 00000000 		.4byte	uart_rx_Handler
+ 2771 072e 00       		.byte	0
+ 2772 072f 0E       		.uleb128 0xe
+ 2773 0730 46000000 		.4byte	.LVL74
+ 2774 0734 A30A0000 		.4byte	0xaa3
+ 2775 0738 0F       		.uleb128 0xf
+ 2776 0739 4C000000 		.4byte	.LVL75
+ 2777 073d AE0A0000 		.4byte	0xaae
+ 2778 0741 4B070000 		.4byte	0x74b
+ 2779 0745 10       		.uleb128 0x10
+ 2780 0746 01       		.uleb128 0x1
+ 2781 0747 50       		.byte	0x50
+ 2782 0748 01       		.uleb128 0x1
+ 2783 0749 31       		.byte	0x31
+ 2784 074a 00       		.byte	0
+ 2785 074b 0E       		.uleb128 0xe
+ 2786 074c 50000000 		.4byte	.LVL76
+ 2787 0750 B90A0000 		.4byte	0xab9
+ 2788 0754 0E       		.uleb128 0xe
+ 2789 0755 54000000 		.4byte	.LVL77
+ 2790 0759 C40A0000 		.4byte	0xac4
+ 2791 075d 0E       		.uleb128 0xe
+ 2792 075e 58000000 		.4byte	.LVL78
+ 2793 0762 CF0A0000 		.4byte	0xacf
+ 2794 0766 0E       		.uleb128 0xe
+ 2795 0767 5C000000 		.4byte	.LVL79
+ 2796 076b DA0A0000 		.4byte	0xada
+ 2797 076f 0E       		.uleb128 0xe
+ 2798 0770 60000000 		.4byte	.LVL80
+ 2799 0774 E50A0000 		.4byte	0xae5
+ 2800 0778 0E       		.uleb128 0xe
+ 2801 0779 64000000 		.4byte	.LVL81
+ 2802 077d F00A0000 		.4byte	0xaf0
+ 2803 0781 0E       		.uleb128 0xe
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 63
+
+
+ 2804 0782 68000000 		.4byte	.LVL82
+ 2805 0786 FB0A0000 		.4byte	0xafb
+ 2806 078a 0E       		.uleb128 0xe
+ 2807 078b 6C000000 		.4byte	.LVL83
+ 2808 078f 060B0000 		.4byte	0xb06
+ 2809 0793 0F       		.uleb128 0xf
+ 2810 0794 72000000 		.4byte	.LVL84
+ 2811 0798 110B0000 		.4byte	0xb11
+ 2812 079c AA070000 		.4byte	0x7aa
+ 2813 07a0 10       		.uleb128 0x10
+ 2814 07a1 01       		.uleb128 0x1
+ 2815 07a2 50       		.byte	0x50
+ 2816 07a3 05       		.uleb128 0x5
+ 2817 07a4 03       		.byte	0x3
+ 2818 07a5 0C000000 		.4byte	.LC1
+ 2819 07a9 00       		.byte	0
+ 2820 07aa 0E       		.uleb128 0xe
+ 2821 07ab 76000000 		.4byte	.LVL85
+ 2822 07af 1C0B0000 		.4byte	0xb1c
+ 2823 07b3 00       		.byte	0
+ 2824 07b4 1B       		.uleb128 0x1b
+ 2825 07b5 DD030000 		.4byte	.LASF35
+ 2826 07b9 05       		.byte	0x5
+ 2827 07ba 1207     		.2byte	0x712
+ 2828 07bc C0070000 		.4byte	0x7c0
+ 2829 07c0 1C       		.uleb128 0x1c
+ 2830 07c1 8C000000 		.4byte	0x8c
+ 2831 07c5 1D       		.uleb128 0x1d
+ 2832 07c6 EA030000 		.4byte	.LASF36
+ 2833 07ca 01       		.byte	0x1
+ 2834 07cb 11       		.byte	0x11
+ 2835 07cc 73000000 		.4byte	0x73
+ 2836 07d0 05       		.uleb128 0x5
+ 2837 07d1 03       		.byte	0x3
+ 2838 07d2 00000000 		.4byte	count
+ 2839 07d6 1D       		.uleb128 0x1d
+ 2840 07d7 5B030000 		.4byte	.LASF37
+ 2841 07db 01       		.byte	0x1
+ 2842 07dc 12       		.byte	0x12
+ 2843 07dd 73000000 		.4byte	0x73
+ 2844 07e1 05       		.uleb128 0x5
+ 2845 07e2 03       		.byte	0x3
+ 2846 07e3 00000000 		.4byte	countTimesw2
+ 2847 07e7 1D       		.uleb128 0x1d
+ 2848 07e8 68030000 		.4byte	.LASF38
+ 2849 07ec 01       		.byte	0x1
+ 2850 07ed 13       		.byte	0x13
+ 2851 07ee 73000000 		.4byte	0x73
+ 2852 07f2 05       		.uleb128 0x5
+ 2853 07f3 03       		.byte	0x3
+ 2854 07f4 00000000 		.4byte	countTimesw3
+ 2855 07f8 1D       		.uleb128 0x1d
+ 2856 07f9 BF010000 		.4byte	.LASF39
+ 2857 07fd 01       		.byte	0x1
+ 2858 07fe 14       		.byte	0x14
+ 2859 07ff 73000000 		.4byte	0x73
+ 2860 0803 05       		.uleb128 0x5
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 64
+
+
+ 2861 0804 03       		.byte	0x3
+ 2862 0805 00000000 		.4byte	countTime
+ 2863 0809 1E       		.uleb128 0x1e
+ 2864 080a 746900   		.ascii	"ti\000"
+ 2865 080d 01       		.byte	0x1
+ 2866 080e 15       		.byte	0x15
+ 2867 080f 73000000 		.4byte	0x73
+ 2868 0813 05       		.uleb128 0x5
+ 2869 0814 03       		.byte	0x3
+ 2870 0815 00000000 		.4byte	ti
+ 2871 0819 1D       		.uleb128 0x1d
+ 2872 081a A0010000 		.4byte	.LASF40
+ 2873 081e 01       		.byte	0x1
+ 2874 081f 16       		.byte	0x16
+ 2875 0820 73000000 		.4byte	0x73
+ 2876 0824 05       		.uleb128 0x5
+ 2877 0825 03       		.byte	0x3
+ 2878 0826 00000000 		.4byte	taah
+ 2879 082a 07       		.uleb128 0x7
+ 2880 082b A3000000 		.4byte	0xa3
+ 2881 082f 3A080000 		.4byte	0x83a
+ 2882 0833 08       		.uleb128 0x8
+ 2883 0834 CB000000 		.4byte	0xcb
+ 2884 0838 63       		.byte	0x63
+ 2885 0839 00       		.byte	0
+ 2886 083a 1E       		.uleb128 0x1e
+ 2887 083b 76656300 		.ascii	"vec\000"
+ 2888 083f 01       		.byte	0x1
+ 2889 0840 17       		.byte	0x17
+ 2890 0841 2A080000 		.4byte	0x82a
+ 2891 0845 05       		.uleb128 0x5
+ 2892 0846 03       		.byte	0x3
+ 2893 0847 00000000 		.4byte	vec
+ 2894 084b 1D       		.uleb128 0x1d
+ 2895 084c FF000000 		.4byte	.LASF41
+ 2896 0850 01       		.byte	0x1
+ 2897 0851 18       		.byte	0x18
+ 2898 0852 5C080000 		.4byte	0x85c
+ 2899 0856 05       		.uleb128 0x5
+ 2900 0857 03       		.byte	0x3
+ 2901 0858 00000000 		.4byte	mode
+ 2902 085c 02       		.uleb128 0x2
+ 2903 085d 01       		.byte	0x1
+ 2904 085e 02       		.byte	0x2
+ 2905 085f 7F030000 		.4byte	.LASF42
+ 2906 0863 1D       		.uleb128 0x1d
+ 2907 0864 41020000 		.4byte	.LASF43
+ 2908 0868 01       		.byte	0x1
+ 2909 0869 19       		.byte	0x19
+ 2910 086a 5C080000 		.4byte	0x85c
+ 2911 086e 05       		.uleb128 0x5
+ 2912 086f 03       		.byte	0x3
+ 2913 0870 00000000 		.4byte	light
+ 2914 0874 1D       		.uleb128 0x1d
+ 2915 0875 D5000000 		.4byte	.LASF44
+ 2916 0879 01       		.byte	0x1
+ 2917 087a 1A       		.byte	0x1a
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 65
+
+
+ 2918 087b 5C080000 		.4byte	0x85c
+ 2919 087f 05       		.uleb128 0x5
+ 2920 0880 03       		.byte	0x3
+ 2921 0881 00000000 		.4byte	begin
+ 2922 0885 1D       		.uleb128 0x1d
+ 2923 0886 1E030000 		.4byte	.LASF45
+ 2924 088a 01       		.byte	0x1
+ 2925 088b 1B       		.byte	0x1b
+ 2926 088c 5C080000 		.4byte	0x85c
+ 2927 0890 05       		.uleb128 0x5
+ 2928 0891 03       		.byte	0x3
+ 2929 0892 00000000 		.4byte	rxbegin
+ 2930 0896 1D       		.uleb128 0x1d
+ 2931 0897 85030000 		.4byte	.LASF46
+ 2932 089b 01       		.byte	0x1
+ 2933 089c 1B       		.byte	0x1b
+ 2934 089d 5C080000 		.4byte	0x85c
+ 2935 08a1 05       		.uleb128 0x5
+ 2936 08a2 03       		.byte	0x3
+ 2937 08a3 00000000 		.4byte	rxend
+ 2938 08a7 1D       		.uleb128 0x1d
+ 2939 08a8 4E040000 		.4byte	.LASF47
+ 2940 08ac 01       		.byte	0x1
+ 2941 08ad 1B       		.byte	0x1b
+ 2942 08ae 5C080000 		.4byte	0x85c
+ 2943 08b2 05       		.uleb128 0x5
+ 2944 08b3 03       		.byte	0x3
+ 2945 08b4 00000000 		.4byte	flag
+ 2946 08b8 1E       		.uleb128 0x1e
+ 2947 08b9 6D6F7400 		.ascii	"mot\000"
+ 2948 08bd 01       		.byte	0x1
+ 2949 08be 1C       		.byte	0x1c
+ 2950 08bf D2000000 		.4byte	0xd2
+ 2951 08c3 05       		.uleb128 0x5
+ 2952 08c4 03       		.byte	0x3
+ 2953 08c5 00000000 		.4byte	mot
+ 2954 08c9 1D       		.uleb128 0x1d
+ 2955 08ca 79010000 		.4byte	.LASF48
+ 2956 08ce 01       		.byte	0x1
+ 2957 08cf 1D       		.byte	0x1d
+ 2958 08d0 D8000000 		.4byte	0xd8
+ 2959 08d4 05       		.uleb128 0x5
+ 2960 08d5 03       		.byte	0x3
+ 2961 08d6 00000000 		.4byte	formmot
+ 2962 08da 07       		.uleb128 0x7
+ 2963 08db 73000000 		.4byte	0x73
+ 2964 08df EA080000 		.4byte	0x8ea
+ 2965 08e3 08       		.uleb128 0x8
+ 2966 08e4 CB000000 		.4byte	0xcb
+ 2967 08e8 03       		.byte	0x3
+ 2968 08e9 00       		.byte	0
+ 2969 08ea 1D       		.uleb128 0x1d
+ 2970 08eb F7020000 		.4byte	.LASF49
+ 2971 08ef 01       		.byte	0x1
+ 2972 08f0 1E       		.byte	0x1e
+ 2973 08f1 DA080000 		.4byte	0x8da
+ 2974 08f5 05       		.uleb128 0x5
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 66
+
+
+ 2975 08f6 03       		.byte	0x3
+ 2976 08f7 00000000 		.4byte	morsecode
+ 2977 08fb 1D       		.uleb128 0x1d
+ 2978 08fc 70010000 		.4byte	.LASF50
+ 2979 0900 01       		.byte	0x1
+ 2980 0901 1F       		.byte	0x1f
+ 2981 0902 73000000 		.4byte	0x73
+ 2982 0906 05       		.uleb128 0x5
+ 2983 0907 03       		.byte	0x3
+ 2984 0908 00000000 		.4byte	morseint
+ 2985 090c 1E       		.uleb128 0x1e
+ 2986 090d 6B00     		.ascii	"k\000"
+ 2987 090f 01       		.byte	0x1
+ 2988 0910 1F       		.byte	0x1f
+ 2989 0911 73000000 		.4byte	0x73
+ 2990 0915 05       		.uleb128 0x5
+ 2991 0916 03       		.byte	0x3
+ 2992 0917 00000000 		.4byte	k
+ 2993 091b 1D       		.uleb128 0x1d
+ 2994 091c 04010000 		.4byte	.LASF51
+ 2995 0920 01       		.byte	0x1
+ 2996 0921 20       		.byte	0x20
+ 2997 0922 73000000 		.4byte	0x73
+ 2998 0926 05       		.uleb128 0x5
+ 2999 0927 03       		.byte	0x3
+ 3000 0928 00000000 		.4byte	morsetottimespace
+ 3001 092c 1D       		.uleb128 0x1d
+ 3002 092d 11040000 		.4byte	.LASF52
+ 3003 0931 01       		.byte	0x1
+ 3004 0932 21       		.byte	0x21
+ 3005 0933 97000000 		.4byte	0x97
+ 3006 0937 05       		.uleb128 0x5
+ 3007 0938 03       		.byte	0x3
+ 3008 0939 00000000 		.4byte	rxData
+ 3009 093d 1D       		.uleb128 0x1d
+ 3010 093e FA010000 		.4byte	.LASF53
+ 3011 0942 01       		.byte	0x1
+ 3012 0943 22       		.byte	0x22
+ 3013 0944 B1000000 		.4byte	0xb1
+ 3014 0948 05       		.uleb128 0x5
+ 3015 0949 03       		.byte	0x3
+ 3016 094a 00000000 		.4byte	rxData_char
+ 3017 094e 07       		.uleb128 0x7
+ 3018 094f E8000000 		.4byte	0xe8
+ 3019 0953 5E090000 		.4byte	0x95e
+ 3020 0957 08       		.uleb128 0x8
+ 3021 0958 CB000000 		.4byte	0xcb
+ 3022 095c 19       		.byte	0x19
+ 3023 095d 00       		.byte	0
+ 3024 095e 1D       		.uleb128 0x1d
+ 3025 095f 78000000 		.4byte	.LASF54
+ 3026 0963 01       		.byte	0x1
+ 3027 0964 28       		.byte	0x28
+ 3028 0965 4E090000 		.4byte	0x94e
+ 3029 0969 05       		.uleb128 0x5
+ 3030 096a 03       		.byte	0x3
+ 3031 096b 00000000 		.4byte	semaphore_alphabet
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 67
+
+
+ 3032 096f 1F       		.uleb128 0x1f
+ 3033 0970 E1000000 		.4byte	.LASF55
+ 3034 0974 E1000000 		.4byte	.LASF55
+ 3035 0978 06       		.byte	0x6
+ 3036 0979 70       		.byte	0x70
+ 3037 097a 1F       		.uleb128 0x1f
+ 3038 097b 04040000 		.4byte	.LASF56
+ 3039 097f 04040000 		.4byte	.LASF56
+ 3040 0983 07       		.byte	0x7
+ 3041 0984 3D       		.byte	0x3d
+ 3042 0985 1F       		.uleb128 0x1f
+ 3043 0986 81020000 		.4byte	.LASF57
+ 3044 098a 81020000 		.4byte	.LASF57
+ 3045 098e 07       		.byte	0x7
+ 3046 098f 3C       		.byte	0x3c
+ 3047 0990 1F       		.uleb128 0x1f
+ 3048 0991 AA020000 		.4byte	.LASF58
+ 3049 0995 AA020000 		.4byte	.LASF58
+ 3050 0999 06       		.byte	0x6
+ 3051 099a 6F       		.byte	0x6f
+ 3052 099b 1F       		.uleb128 0x1f
+ 3053 099c C6030000 		.4byte	.LASF59
+ 3054 09a0 C6030000 		.4byte	.LASF59
+ 3055 09a4 07       		.byte	0x7
+ 3056 09a5 3E       		.byte	0x3e
+ 3057 09a6 1F       		.uleb128 0x1f
+ 3058 09a7 33040000 		.4byte	.LASF60
+ 3059 09ab 33040000 		.4byte	.LASF60
+ 3060 09af 08       		.byte	0x8
+ 3061 09b0 26       		.byte	0x26
+ 3062 09b1 1F       		.uleb128 0x1f
+ 3063 09b2 47020000 		.4byte	.LASF61
+ 3064 09b6 47020000 		.4byte	.LASF61
+ 3065 09ba 09       		.byte	0x9
+ 3066 09bb 26       		.byte	0x26
+ 3067 09bc 1F       		.uleb128 0x1f
+ 3068 09bd FD040000 		.4byte	.LASF62
+ 3069 09c1 FD040000 		.4byte	.LASF62
+ 3070 09c5 0A       		.byte	0xa
+ 3071 09c6 26       		.byte	0x26
+ 3072 09c7 1F       		.uleb128 0x1f
+ 3073 09c8 BA020000 		.4byte	.LASF63
+ 3074 09cc BA020000 		.4byte	.LASF63
+ 3075 09d0 0B       		.byte	0xb
+ 3076 09d1 26       		.byte	0x26
+ 3077 09d2 1F       		.uleb128 0x1f
+ 3078 09d3 47000000 		.4byte	.LASF64
+ 3079 09d7 47000000 		.4byte	.LASF64
+ 3080 09db 0C       		.byte	0xc
+ 3081 09dc 5E       		.byte	0x5e
+ 3082 09dd 1F       		.uleb128 0x1f
+ 3083 09de 1C020000 		.4byte	.LASF65
+ 3084 09e2 1C020000 		.4byte	.LASF65
+ 3085 09e6 0D       		.byte	0xd
+ 3086 09e7 37       		.byte	0x37
+ 3087 09e8 1F       		.uleb128 0x1f
+ 3088 09e9 8B030000 		.4byte	.LASF66
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 68
+
+
+ 3089 09ed 8B030000 		.4byte	.LASF66
+ 3090 09f1 0E       		.byte	0xe
+ 3091 09f2 29       		.byte	0x29
+ 3092 09f3 1F       		.uleb128 0x1f
+ 3093 09f4 3F040000 		.4byte	.LASF67
+ 3094 09f8 3F040000 		.4byte	.LASF67
+ 3095 09fc 0F       		.byte	0xf
+ 3096 09fd 19       		.byte	0x19
+ 3097 09fe 1F       		.uleb128 0x1f
+ 3098 09ff 67020000 		.4byte	.LASF68
+ 3099 0a03 67020000 		.4byte	.LASF68
+ 3100 0a07 10       		.byte	0x10
+ 3101 0a08 CA       		.byte	0xca
+ 3102 0a09 1F       		.uleb128 0x1f
+ 3103 0a0a 53020000 		.4byte	.LASF69
+ 3104 0a0e 53020000 		.4byte	.LASF69
+ 3105 0a12 10       		.byte	0x10
+ 3106 0a13 C7       		.byte	0xc7
+ 3107 0a14 1F       		.uleb128 0x1f
+ 3108 0a15 09050000 		.4byte	.LASF70
+ 3109 0a19 09050000 		.4byte	.LASF70
+ 3110 0a1d 06       		.byte	0x6
+ 3111 0a1e 8A       		.byte	0x8a
+ 3112 0a1f 1F       		.uleb128 0x1f
+ 3113 0a20 30030000 		.4byte	.LASF71
+ 3114 0a24 30030000 		.4byte	.LASF71
+ 3115 0a28 11       		.byte	0x11
+ 3116 0a29 21       		.byte	0x21
+ 3117 0a2a 20       		.uleb128 0x20
+ 3118 0a2b 73696E00 		.ascii	"sin\000"
+ 3119 0a2f 73696E00 		.ascii	"sin\000"
+ 3120 0a33 1A       		.byte	0x1a
+ 3121 0a34 6F       		.byte	0x6f
+ 3122 0a35 1F       		.uleb128 0x1f
+ 3123 0a36 91020000 		.4byte	.LASF72
+ 3124 0a3a 91020000 		.4byte	.LASF72
+ 3125 0a3e 12       		.byte	0x12
+ 3126 0a3f 0F       		.byte	0xf
+ 3127 0a40 1F       		.uleb128 0x1f
+ 3128 0a41 B1000000 		.4byte	.LASF73
+ 3129 0a45 B1000000 		.4byte	.LASF73
+ 3130 0a49 0F       		.byte	0xf
+ 3131 0a4a 18       		.byte	0x18
+ 3132 0a4b 1F       		.uleb128 0x1f
+ 3133 0a4c E6040000 		.4byte	.LASF74
+ 3134 0a50 E6040000 		.4byte	.LASF74
+ 3135 0a54 13       		.byte	0x13
+ 3136 0a55 76       		.byte	0x76
+ 3137 0a56 1F       		.uleb128 0x1f
+ 3138 0a57 9B030000 		.4byte	.LASF75
+ 3139 0a5b 9B030000 		.4byte	.LASF75
+ 3140 0a5f 14       		.byte	0x14
+ 3141 0a60 27       		.byte	0x27
+ 3142 0a61 1F       		.uleb128 0x1f
+ 3143 0a62 9C000000 		.4byte	.LASF76
+ 3144 0a66 9C000000 		.4byte	.LASF76
+ 3145 0a6a 15       		.byte	0x15
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 69
+
+
+ 3146 0a6b 56       		.byte	0x56
+ 3147 0a6c 1F       		.uleb128 0x1f
+ 3148 0a6d 2D020000 		.4byte	.LASF77
+ 3149 0a71 2D020000 		.4byte	.LASF77
+ 3150 0a75 15       		.byte	0x15
+ 3151 0a76 47       		.byte	0x47
+ 3152 0a77 1F       		.uleb128 0x1f
+ 3153 0a78 3E010000 		.4byte	.LASF78
+ 3154 0a7c 3E010000 		.4byte	.LASF78
+ 3155 0a80 16       		.byte	0x16
+ 3156 0a81 29       		.byte	0x29
+ 3157 0a82 1F       		.uleb128 0x1f
+ 3158 0a83 3F030000 		.4byte	.LASF79
+ 3159 0a87 3F030000 		.4byte	.LASF79
+ 3160 0a8b 17       		.byte	0x17
+ 3161 0a8c 29       		.byte	0x29
+ 3162 0a8d 1F       		.uleb128 0x1f
+ 3163 0a8e CC000000 		.4byte	.LASF80
+ 3164 0a92 CC000000 		.4byte	.LASF80
+ 3165 0a96 18       		.byte	0x18
+ 3166 0a97 29       		.byte	0x29
+ 3167 0a98 1F       		.uleb128 0x1f
+ 3168 0a99 23010000 		.4byte	.LASF81
+ 3169 0a9d 23010000 		.4byte	.LASF81
+ 3170 0aa1 19       		.byte	0x19
+ 3171 0aa2 18       		.byte	0x18
+ 3172 0aa3 1F       		.uleb128 0x1f
+ 3173 0aa4 FA030000 		.4byte	.LASF82
+ 3174 0aa8 FA030000 		.4byte	.LASF82
+ 3175 0aac 07       		.byte	0x7
+ 3176 0aad 38       		.byte	0x38
+ 3177 0aae 1F       		.uleb128 0x1f
+ 3178 0aaf 8B000000 		.4byte	.LASF83
+ 3179 0ab3 8B000000 		.4byte	.LASF83
+ 3180 0ab7 07       		.byte	0x7
+ 3181 0ab8 3A       		.byte	0x3a
+ 3182 0ab9 1F       		.uleb128 0x1f
+ 3183 0aba D2030000 		.4byte	.LASF84
+ 3184 0abe D2030000 		.4byte	.LASF84
+ 3185 0ac2 12       		.byte	0x12
+ 3186 0ac3 0E       		.byte	0xe
+ 3187 0ac4 1F       		.uleb128 0x1f
+ 3188 0ac5 C9010000 		.4byte	.LASF85
+ 3189 0ac9 C9010000 		.4byte	.LASF85
+ 3190 0acd 0C       		.byte	0xc
+ 3191 0ace 5A       		.byte	0x5a
+ 3192 0acf 1F       		.uleb128 0x1f
+ 3193 0ad0 16050000 		.4byte	.LASF86
+ 3194 0ad4 16050000 		.4byte	.LASF86
+ 3195 0ad8 0D       		.byte	0xd
+ 3196 0ad9 33       		.byte	0x33
+ 3197 0ada 1F       		.uleb128 0x1f
+ 3198 0adb 75030000 		.4byte	.LASF87
+ 3199 0adf 75030000 		.4byte	.LASF87
+ 3200 0ae3 15       		.byte	0x15
+ 3201 0ae4 3A       		.byte	0x3a
+ 3202 0ae5 1F       		.uleb128 0x1f
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 70
+
+
+ 3203 0ae6 18040000 		.4byte	.LASF88
+ 3204 0aea 18040000 		.4byte	.LASF88
+ 3205 0aee 15       		.byte	0x15
+ 3206 0aef 3D       		.byte	0x3d
+ 3207 0af0 1F       		.uleb128 0x1f
+ 3208 0af1 60000000 		.4byte	.LASF89
+ 3209 0af5 60000000 		.4byte	.LASF89
+ 3210 0af9 10       		.byte	0x10
+ 3211 0afa 92       		.byte	0x92
+ 3212 0afb 1F       		.uleb128 0x1f
+ 3213 0afc 8D010000 		.4byte	.LASF90
+ 3214 0b00 8D010000 		.4byte	.LASF90
+ 3215 0b04 14       		.byte	0x14
+ 3216 0b05 25       		.byte	0x25
+ 3217 0b06 1F       		.uleb128 0x1f
+ 3218 0b07 4F010000 		.4byte	.LASF91
+ 3219 0b0b 4F010000 		.4byte	.LASF91
+ 3220 0b0f 06       		.byte	0x6
+ 3221 0b10 54       		.byte	0x54
+ 3222 0b11 1F       		.uleb128 0x1f
+ 3223 0b12 2F010000 		.4byte	.LASF92
+ 3224 0b16 2F010000 		.4byte	.LASF92
+ 3225 0b1a 06       		.byte	0x6
+ 3226 0b1b 8B       		.byte	0x8b
+ 3227 0b1c 1F       		.uleb128 0x1f
+ 3228 0b1d 0A030000 		.4byte	.LASF93
+ 3229 0b21 0A030000 		.4byte	.LASF93
+ 3230 0b25 06       		.byte	0x6
+ 3231 0b26 71       		.byte	0x71
+ 3232 0b27 00       		.byte	0
+ 3233              		.section	.debug_abbrev,"",%progbits
+ 3234              	.Ldebug_abbrev0:
+ 3235 0000 01       		.uleb128 0x1
+ 3236 0001 11       		.uleb128 0x11
+ 3237 0002 01       		.byte	0x1
+ 3238 0003 25       		.uleb128 0x25
+ 3239 0004 0E       		.uleb128 0xe
+ 3240 0005 13       		.uleb128 0x13
+ 3241 0006 0B       		.uleb128 0xb
+ 3242 0007 03       		.uleb128 0x3
+ 3243 0008 0E       		.uleb128 0xe
+ 3244 0009 1B       		.uleb128 0x1b
+ 3245 000a 0E       		.uleb128 0xe
+ 3246 000b 55       		.uleb128 0x55
+ 3247 000c 17       		.uleb128 0x17
+ 3248 000d 11       		.uleb128 0x11
+ 3249 000e 01       		.uleb128 0x1
+ 3250 000f 10       		.uleb128 0x10
+ 3251 0010 17       		.uleb128 0x17
+ 3252 0011 00       		.byte	0
+ 3253 0012 00       		.byte	0
+ 3254 0013 02       		.uleb128 0x2
+ 3255 0014 24       		.uleb128 0x24
+ 3256 0015 00       		.byte	0
+ 3257 0016 0B       		.uleb128 0xb
+ 3258 0017 0B       		.uleb128 0xb
+ 3259 0018 3E       		.uleb128 0x3e
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 71
+
+
+ 3260 0019 0B       		.uleb128 0xb
+ 3261 001a 03       		.uleb128 0x3
+ 3262 001b 0E       		.uleb128 0xe
+ 3263 001c 00       		.byte	0
+ 3264 001d 00       		.byte	0
+ 3265 001e 03       		.uleb128 0x3
+ 3266 001f 16       		.uleb128 0x16
+ 3267 0020 00       		.byte	0
+ 3268 0021 03       		.uleb128 0x3
+ 3269 0022 0E       		.uleb128 0xe
+ 3270 0023 3A       		.uleb128 0x3a
+ 3271 0024 0B       		.uleb128 0xb
+ 3272 0025 3B       		.uleb128 0x3b
+ 3273 0026 0B       		.uleb128 0xb
+ 3274 0027 49       		.uleb128 0x49
+ 3275 0028 13       		.uleb128 0x13
+ 3276 0029 00       		.byte	0
+ 3277 002a 00       		.byte	0
+ 3278 002b 04       		.uleb128 0x4
+ 3279 002c 24       		.uleb128 0x24
+ 3280 002d 00       		.byte	0
+ 3281 002e 0B       		.uleb128 0xb
+ 3282 002f 0B       		.uleb128 0xb
+ 3283 0030 3E       		.uleb128 0x3e
+ 3284 0031 0B       		.uleb128 0xb
+ 3285 0032 03       		.uleb128 0x3
+ 3286 0033 08       		.uleb128 0x8
+ 3287 0034 00       		.byte	0
+ 3288 0035 00       		.byte	0
+ 3289 0036 05       		.uleb128 0x5
+ 3290 0037 16       		.uleb128 0x16
+ 3291 0038 00       		.byte	0
+ 3292 0039 03       		.uleb128 0x3
+ 3293 003a 0E       		.uleb128 0xe
+ 3294 003b 3A       		.uleb128 0x3a
+ 3295 003c 0B       		.uleb128 0xb
+ 3296 003d 3B       		.uleb128 0x3b
+ 3297 003e 05       		.uleb128 0x5
+ 3298 003f 49       		.uleb128 0x49
+ 3299 0040 13       		.uleb128 0x13
+ 3300 0041 00       		.byte	0
+ 3301 0042 00       		.byte	0
+ 3302 0043 06       		.uleb128 0x6
+ 3303 0044 0F       		.uleb128 0xf
+ 3304 0045 00       		.byte	0
+ 3305 0046 0B       		.uleb128 0xb
+ 3306 0047 0B       		.uleb128 0xb
+ 3307 0048 49       		.uleb128 0x49
+ 3308 0049 13       		.uleb128 0x13
+ 3309 004a 00       		.byte	0
+ 3310 004b 00       		.byte	0
+ 3311 004c 07       		.uleb128 0x7
+ 3312 004d 01       		.uleb128 0x1
+ 3313 004e 01       		.byte	0x1
+ 3314 004f 49       		.uleb128 0x49
+ 3315 0050 13       		.uleb128 0x13
+ 3316 0051 01       		.uleb128 0x1
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 72
+
+
+ 3317 0052 13       		.uleb128 0x13
+ 3318 0053 00       		.byte	0
+ 3319 0054 00       		.byte	0
+ 3320 0055 08       		.uleb128 0x8
+ 3321 0056 21       		.uleb128 0x21
+ 3322 0057 00       		.byte	0
+ 3323 0058 49       		.uleb128 0x49
+ 3324 0059 13       		.uleb128 0x13
+ 3325 005a 2F       		.uleb128 0x2f
+ 3326 005b 0B       		.uleb128 0xb
+ 3327 005c 00       		.byte	0
+ 3328 005d 00       		.byte	0
+ 3329 005e 09       		.uleb128 0x9
+ 3330 005f 13       		.uleb128 0x13
+ 3331 0060 01       		.byte	0x1
+ 3332 0061 03       		.uleb128 0x3
+ 3333 0062 0E       		.uleb128 0xe
+ 3334 0063 0B       		.uleb128 0xb
+ 3335 0064 0B       		.uleb128 0xb
+ 3336 0065 3A       		.uleb128 0x3a
+ 3337 0066 0B       		.uleb128 0xb
+ 3338 0067 3B       		.uleb128 0x3b
+ 3339 0068 0B       		.uleb128 0xb
+ 3340 0069 01       		.uleb128 0x1
+ 3341 006a 13       		.uleb128 0x13
+ 3342 006b 00       		.byte	0
+ 3343 006c 00       		.byte	0
+ 3344 006d 0A       		.uleb128 0xa
+ 3345 006e 0D       		.uleb128 0xd
+ 3346 006f 00       		.byte	0
+ 3347 0070 03       		.uleb128 0x3
+ 3348 0071 08       		.uleb128 0x8
+ 3349 0072 3A       		.uleb128 0x3a
+ 3350 0073 0B       		.uleb128 0xb
+ 3351 0074 3B       		.uleb128 0x3b
+ 3352 0075 0B       		.uleb128 0xb
+ 3353 0076 49       		.uleb128 0x49
+ 3354 0077 13       		.uleb128 0x13
+ 3355 0078 38       		.uleb128 0x38
+ 3356 0079 0B       		.uleb128 0xb
+ 3357 007a 00       		.byte	0
+ 3358 007b 00       		.byte	0
+ 3359 007c 0B       		.uleb128 0xb
+ 3360 007d 0D       		.uleb128 0xd
+ 3361 007e 00       		.byte	0
+ 3362 007f 03       		.uleb128 0x3
+ 3363 0080 0E       		.uleb128 0xe
+ 3364 0081 3A       		.uleb128 0x3a
+ 3365 0082 0B       		.uleb128 0xb
+ 3366 0083 3B       		.uleb128 0x3b
+ 3367 0084 0B       		.uleb128 0xb
+ 3368 0085 49       		.uleb128 0x49
+ 3369 0086 13       		.uleb128 0x13
+ 3370 0087 38       		.uleb128 0x38
+ 3371 0088 0B       		.uleb128 0xb
+ 3372 0089 00       		.byte	0
+ 3373 008a 00       		.byte	0
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 73
+
+
+ 3374 008b 0C       		.uleb128 0xc
+ 3375 008c 2E       		.uleb128 0x2e
+ 3376 008d 01       		.byte	0x1
+ 3377 008e 3F       		.uleb128 0x3f
+ 3378 008f 19       		.uleb128 0x19
+ 3379 0090 03       		.uleb128 0x3
+ 3380 0091 0E       		.uleb128 0xe
+ 3381 0092 3A       		.uleb128 0x3a
+ 3382 0093 0B       		.uleb128 0xb
+ 3383 0094 3B       		.uleb128 0x3b
+ 3384 0095 05       		.uleb128 0x5
+ 3385 0096 27       		.uleb128 0x27
+ 3386 0097 19       		.uleb128 0x19
+ 3387 0098 11       		.uleb128 0x11
+ 3388 0099 01       		.uleb128 0x1
+ 3389 009a 12       		.uleb128 0x12
+ 3390 009b 06       		.uleb128 0x6
+ 3391 009c 40       		.uleb128 0x40
+ 3392 009d 18       		.uleb128 0x18
+ 3393 009e 9742     		.uleb128 0x2117
+ 3394 00a0 19       		.uleb128 0x19
+ 3395 00a1 01       		.uleb128 0x1
+ 3396 00a2 13       		.uleb128 0x13
+ 3397 00a3 00       		.byte	0
+ 3398 00a4 00       		.byte	0
+ 3399 00a5 0D       		.uleb128 0xd
+ 3400 00a6 34       		.uleb128 0x34
+ 3401 00a7 00       		.byte	0
+ 3402 00a8 03       		.uleb128 0x3
+ 3403 00a9 0E       		.uleb128 0xe
+ 3404 00aa 3A       		.uleb128 0x3a
+ 3405 00ab 0B       		.uleb128 0xb
+ 3406 00ac 3B       		.uleb128 0x3b
+ 3407 00ad 05       		.uleb128 0x5
+ 3408 00ae 49       		.uleb128 0x49
+ 3409 00af 13       		.uleb128 0x13
+ 3410 00b0 02       		.uleb128 0x2
+ 3411 00b1 17       		.uleb128 0x17
+ 3412 00b2 00       		.byte	0
+ 3413 00b3 00       		.byte	0
+ 3414 00b4 0E       		.uleb128 0xe
+ 3415 00b5 898201   		.uleb128 0x4109
+ 3416 00b8 00       		.byte	0
+ 3417 00b9 11       		.uleb128 0x11
+ 3418 00ba 01       		.uleb128 0x1
+ 3419 00bb 31       		.uleb128 0x31
+ 3420 00bc 13       		.uleb128 0x13
+ 3421 00bd 00       		.byte	0
+ 3422 00be 00       		.byte	0
+ 3423 00bf 0F       		.uleb128 0xf
+ 3424 00c0 898201   		.uleb128 0x4109
+ 3425 00c3 01       		.byte	0x1
+ 3426 00c4 11       		.uleb128 0x11
+ 3427 00c5 01       		.uleb128 0x1
+ 3428 00c6 31       		.uleb128 0x31
+ 3429 00c7 13       		.uleb128 0x13
+ 3430 00c8 01       		.uleb128 0x1
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 74
+
+
+ 3431 00c9 13       		.uleb128 0x13
+ 3432 00ca 00       		.byte	0
+ 3433 00cb 00       		.byte	0
+ 3434 00cc 10       		.uleb128 0x10
+ 3435 00cd 8A8201   		.uleb128 0x410a
+ 3436 00d0 00       		.byte	0
+ 3437 00d1 02       		.uleb128 0x2
+ 3438 00d2 18       		.uleb128 0x18
+ 3439 00d3 9142     		.uleb128 0x2111
+ 3440 00d5 18       		.uleb128 0x18
+ 3441 00d6 00       		.byte	0
+ 3442 00d7 00       		.byte	0
+ 3443 00d8 11       		.uleb128 0x11
+ 3444 00d9 2E       		.uleb128 0x2e
+ 3445 00da 01       		.byte	0x1
+ 3446 00db 3F       		.uleb128 0x3f
+ 3447 00dc 19       		.uleb128 0x19
+ 3448 00dd 03       		.uleb128 0x3
+ 3449 00de 0E       		.uleb128 0xe
+ 3450 00df 3A       		.uleb128 0x3a
+ 3451 00e0 0B       		.uleb128 0xb
+ 3452 00e1 3B       		.uleb128 0x3b
+ 3453 00e2 0B       		.uleb128 0xb
+ 3454 00e3 27       		.uleb128 0x27
+ 3455 00e4 19       		.uleb128 0x19
+ 3456 00e5 11       		.uleb128 0x11
+ 3457 00e6 01       		.uleb128 0x1
+ 3458 00e7 12       		.uleb128 0x12
+ 3459 00e8 06       		.uleb128 0x6
+ 3460 00e9 40       		.uleb128 0x40
+ 3461 00ea 18       		.uleb128 0x18
+ 3462 00eb 9742     		.uleb128 0x2117
+ 3463 00ed 19       		.uleb128 0x19
+ 3464 00ee 01       		.uleb128 0x1
+ 3465 00ef 13       		.uleb128 0x13
+ 3466 00f0 00       		.byte	0
+ 3467 00f1 00       		.byte	0
+ 3468 00f2 12       		.uleb128 0x12
+ 3469 00f3 05       		.uleb128 0x5
+ 3470 00f4 00       		.byte	0
+ 3471 00f5 03       		.uleb128 0x3
+ 3472 00f6 0E       		.uleb128 0xe
+ 3473 00f7 3A       		.uleb128 0x3a
+ 3474 00f8 0B       		.uleb128 0xb
+ 3475 00f9 3B       		.uleb128 0x3b
+ 3476 00fa 0B       		.uleb128 0xb
+ 3477 00fb 49       		.uleb128 0x49
+ 3478 00fc 13       		.uleb128 0x13
+ 3479 00fd 02       		.uleb128 0x2
+ 3480 00fe 17       		.uleb128 0x17
+ 3481 00ff 00       		.byte	0
+ 3482 0100 00       		.byte	0
+ 3483 0101 13       		.uleb128 0x13
+ 3484 0102 898201   		.uleb128 0x4109
+ 3485 0105 01       		.byte	0x1
+ 3486 0106 11       		.uleb128 0x11
+ 3487 0107 01       		.uleb128 0x1
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 75
+
+
+ 3488 0108 31       		.uleb128 0x31
+ 3489 0109 13       		.uleb128 0x13
+ 3490 010a 00       		.byte	0
+ 3491 010b 00       		.byte	0
+ 3492 010c 14       		.uleb128 0x14
+ 3493 010d 2E       		.uleb128 0x2e
+ 3494 010e 01       		.byte	0x1
+ 3495 010f 3F       		.uleb128 0x3f
+ 3496 0110 19       		.uleb128 0x19
+ 3497 0111 03       		.uleb128 0x3
+ 3498 0112 0E       		.uleb128 0xe
+ 3499 0113 3A       		.uleb128 0x3a
+ 3500 0114 0B       		.uleb128 0xb
+ 3501 0115 3B       		.uleb128 0x3b
+ 3502 0116 0B       		.uleb128 0xb
+ 3503 0117 11       		.uleb128 0x11
+ 3504 0118 01       		.uleb128 0x1
+ 3505 0119 12       		.uleb128 0x12
+ 3506 011a 06       		.uleb128 0x6
+ 3507 011b 40       		.uleb128 0x40
+ 3508 011c 18       		.uleb128 0x18
+ 3509 011d 9642     		.uleb128 0x2116
+ 3510 011f 19       		.uleb128 0x19
+ 3511 0120 01       		.uleb128 0x1
+ 3512 0121 13       		.uleb128 0x13
+ 3513 0122 00       		.byte	0
+ 3514 0123 00       		.byte	0
+ 3515 0124 15       		.uleb128 0x15
+ 3516 0125 05       		.uleb128 0x5
+ 3517 0126 00       		.byte	0
+ 3518 0127 03       		.uleb128 0x3
+ 3519 0128 0E       		.uleb128 0xe
+ 3520 0129 3A       		.uleb128 0x3a
+ 3521 012a 0B       		.uleb128 0xb
+ 3522 012b 3B       		.uleb128 0x3b
+ 3523 012c 0B       		.uleb128 0xb
+ 3524 012d 49       		.uleb128 0x49
+ 3525 012e 13       		.uleb128 0x13
+ 3526 012f 02       		.uleb128 0x2
+ 3527 0130 18       		.uleb128 0x18
+ 3528 0131 00       		.byte	0
+ 3529 0132 00       		.byte	0
+ 3530 0133 16       		.uleb128 0x16
+ 3531 0134 2E       		.uleb128 0x2e
+ 3532 0135 01       		.byte	0x1
+ 3533 0136 3F       		.uleb128 0x3f
+ 3534 0137 19       		.uleb128 0x19
+ 3535 0138 03       		.uleb128 0x3
+ 3536 0139 0E       		.uleb128 0xe
+ 3537 013a 3A       		.uleb128 0x3a
+ 3538 013b 0B       		.uleb128 0xb
+ 3539 013c 3B       		.uleb128 0x3b
+ 3540 013d 0B       		.uleb128 0xb
+ 3541 013e 27       		.uleb128 0x27
+ 3542 013f 19       		.uleb128 0x19
+ 3543 0140 11       		.uleb128 0x11
+ 3544 0141 01       		.uleb128 0x1
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 76
+
+
+ 3545 0142 12       		.uleb128 0x12
+ 3546 0143 06       		.uleb128 0x6
+ 3547 0144 40       		.uleb128 0x40
+ 3548 0145 18       		.uleb128 0x18
+ 3549 0146 9642     		.uleb128 0x2116
+ 3550 0148 19       		.uleb128 0x19
+ 3551 0149 01       		.uleb128 0x1
+ 3552 014a 13       		.uleb128 0x13
+ 3553 014b 00       		.byte	0
+ 3554 014c 00       		.byte	0
+ 3555 014d 17       		.uleb128 0x17
+ 3556 014e 0B       		.uleb128 0xb
+ 3557 014f 01       		.byte	0x1
+ 3558 0150 11       		.uleb128 0x11
+ 3559 0151 01       		.uleb128 0x1
+ 3560 0152 12       		.uleb128 0x12
+ 3561 0153 06       		.uleb128 0x6
+ 3562 0154 01       		.uleb128 0x1
+ 3563 0155 13       		.uleb128 0x13
+ 3564 0156 00       		.byte	0
+ 3565 0157 00       		.byte	0
+ 3566 0158 18       		.uleb128 0x18
+ 3567 0159 34       		.uleb128 0x34
+ 3568 015a 00       		.byte	0
+ 3569 015b 03       		.uleb128 0x3
+ 3570 015c 08       		.uleb128 0x8
+ 3571 015d 3A       		.uleb128 0x3a
+ 3572 015e 0B       		.uleb128 0xb
+ 3573 015f 3B       		.uleb128 0x3b
+ 3574 0160 0B       		.uleb128 0xb
+ 3575 0161 49       		.uleb128 0x49
+ 3576 0162 13       		.uleb128 0x13
+ 3577 0163 02       		.uleb128 0x2
+ 3578 0164 17       		.uleb128 0x17
+ 3579 0165 00       		.byte	0
+ 3580 0166 00       		.byte	0
+ 3581 0167 19       		.uleb128 0x19
+ 3582 0168 2E       		.uleb128 0x2e
+ 3583 0169 01       		.byte	0x1
+ 3584 016a 3F       		.uleb128 0x3f
+ 3585 016b 19       		.uleb128 0x19
+ 3586 016c 03       		.uleb128 0x3
+ 3587 016d 0E       		.uleb128 0xe
+ 3588 016e 3A       		.uleb128 0x3a
+ 3589 016f 0B       		.uleb128 0xb
+ 3590 0170 3B       		.uleb128 0x3b
+ 3591 0171 05       		.uleb128 0x5
+ 3592 0172 27       		.uleb128 0x27
+ 3593 0173 19       		.uleb128 0x19
+ 3594 0174 49       		.uleb128 0x49
+ 3595 0175 13       		.uleb128 0x13
+ 3596 0176 8701     		.uleb128 0x87
+ 3597 0178 19       		.uleb128 0x19
+ 3598 0179 11       		.uleb128 0x11
+ 3599 017a 01       		.uleb128 0x1
+ 3600 017b 12       		.uleb128 0x12
+ 3601 017c 06       		.uleb128 0x6
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 77
+
+
+ 3602 017d 40       		.uleb128 0x40
+ 3603 017e 18       		.uleb128 0x18
+ 3604 017f 9642     		.uleb128 0x2116
+ 3605 0181 19       		.uleb128 0x19
+ 3606 0182 01       		.uleb128 0x1
+ 3607 0183 13       		.uleb128 0x13
+ 3608 0184 00       		.byte	0
+ 3609 0185 00       		.byte	0
+ 3610 0186 1A       		.uleb128 0x1a
+ 3611 0187 34       		.uleb128 0x34
+ 3612 0188 00       		.byte	0
+ 3613 0189 03       		.uleb128 0x3
+ 3614 018a 08       		.uleb128 0x8
+ 3615 018b 3A       		.uleb128 0x3a
+ 3616 018c 0B       		.uleb128 0xb
+ 3617 018d 3B       		.uleb128 0x3b
+ 3618 018e 05       		.uleb128 0x5
+ 3619 018f 49       		.uleb128 0x49
+ 3620 0190 13       		.uleb128 0x13
+ 3621 0191 02       		.uleb128 0x2
+ 3622 0192 17       		.uleb128 0x17
+ 3623 0193 00       		.byte	0
+ 3624 0194 00       		.byte	0
+ 3625 0195 1B       		.uleb128 0x1b
+ 3626 0196 34       		.uleb128 0x34
+ 3627 0197 00       		.byte	0
+ 3628 0198 03       		.uleb128 0x3
+ 3629 0199 0E       		.uleb128 0xe
+ 3630 019a 3A       		.uleb128 0x3a
+ 3631 019b 0B       		.uleb128 0xb
+ 3632 019c 3B       		.uleb128 0x3b
+ 3633 019d 05       		.uleb128 0x5
+ 3634 019e 49       		.uleb128 0x49
+ 3635 019f 13       		.uleb128 0x13
+ 3636 01a0 3F       		.uleb128 0x3f
+ 3637 01a1 19       		.uleb128 0x19
+ 3638 01a2 3C       		.uleb128 0x3c
+ 3639 01a3 19       		.uleb128 0x19
+ 3640 01a4 00       		.byte	0
+ 3641 01a5 00       		.byte	0
+ 3642 01a6 1C       		.uleb128 0x1c
+ 3643 01a7 35       		.uleb128 0x35
+ 3644 01a8 00       		.byte	0
+ 3645 01a9 49       		.uleb128 0x49
+ 3646 01aa 13       		.uleb128 0x13
+ 3647 01ab 00       		.byte	0
+ 3648 01ac 00       		.byte	0
+ 3649 01ad 1D       		.uleb128 0x1d
+ 3650 01ae 34       		.uleb128 0x34
+ 3651 01af 00       		.byte	0
+ 3652 01b0 03       		.uleb128 0x3
+ 3653 01b1 0E       		.uleb128 0xe
+ 3654 01b2 3A       		.uleb128 0x3a
+ 3655 01b3 0B       		.uleb128 0xb
+ 3656 01b4 3B       		.uleb128 0x3b
+ 3657 01b5 0B       		.uleb128 0xb
+ 3658 01b6 49       		.uleb128 0x49
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 78
+
+
+ 3659 01b7 13       		.uleb128 0x13
+ 3660 01b8 3F       		.uleb128 0x3f
+ 3661 01b9 19       		.uleb128 0x19
+ 3662 01ba 02       		.uleb128 0x2
+ 3663 01bb 18       		.uleb128 0x18
+ 3664 01bc 00       		.byte	0
+ 3665 01bd 00       		.byte	0
+ 3666 01be 1E       		.uleb128 0x1e
+ 3667 01bf 34       		.uleb128 0x34
+ 3668 01c0 00       		.byte	0
+ 3669 01c1 03       		.uleb128 0x3
+ 3670 01c2 08       		.uleb128 0x8
+ 3671 01c3 3A       		.uleb128 0x3a
+ 3672 01c4 0B       		.uleb128 0xb
+ 3673 01c5 3B       		.uleb128 0x3b
+ 3674 01c6 0B       		.uleb128 0xb
+ 3675 01c7 49       		.uleb128 0x49
+ 3676 01c8 13       		.uleb128 0x13
+ 3677 01c9 3F       		.uleb128 0x3f
+ 3678 01ca 19       		.uleb128 0x19
+ 3679 01cb 02       		.uleb128 0x2
+ 3680 01cc 18       		.uleb128 0x18
+ 3681 01cd 00       		.byte	0
+ 3682 01ce 00       		.byte	0
+ 3683 01cf 1F       		.uleb128 0x1f
+ 3684 01d0 2E       		.uleb128 0x2e
+ 3685 01d1 00       		.byte	0
+ 3686 01d2 3F       		.uleb128 0x3f
+ 3687 01d3 19       		.uleb128 0x19
+ 3688 01d4 3C       		.uleb128 0x3c
+ 3689 01d5 19       		.uleb128 0x19
+ 3690 01d6 6E       		.uleb128 0x6e
+ 3691 01d7 0E       		.uleb128 0xe
+ 3692 01d8 03       		.uleb128 0x3
+ 3693 01d9 0E       		.uleb128 0xe
+ 3694 01da 3A       		.uleb128 0x3a
+ 3695 01db 0B       		.uleb128 0xb
+ 3696 01dc 3B       		.uleb128 0x3b
+ 3697 01dd 0B       		.uleb128 0xb
+ 3698 01de 00       		.byte	0
+ 3699 01df 00       		.byte	0
+ 3700 01e0 20       		.uleb128 0x20
+ 3701 01e1 2E       		.uleb128 0x2e
+ 3702 01e2 00       		.byte	0
+ 3703 01e3 3F       		.uleb128 0x3f
+ 3704 01e4 19       		.uleb128 0x19
+ 3705 01e5 3C       		.uleb128 0x3c
+ 3706 01e6 19       		.uleb128 0x19
+ 3707 01e7 6E       		.uleb128 0x6e
+ 3708 01e8 08       		.uleb128 0x8
+ 3709 01e9 03       		.uleb128 0x3
+ 3710 01ea 08       		.uleb128 0x8
+ 3711 01eb 3A       		.uleb128 0x3a
+ 3712 01ec 0B       		.uleb128 0xb
+ 3713 01ed 3B       		.uleb128 0x3b
+ 3714 01ee 0B       		.uleb128 0xb
+ 3715 01ef 00       		.byte	0
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 79
+
+
+ 3716 01f0 00       		.byte	0
+ 3717 01f1 00       		.byte	0
+ 3718              		.section	.debug_loc,"",%progbits
+ 3719              	.Ldebug_loc0:
+ 3720              	.LLST0:
+ 3721 0000 08000000 		.4byte	.LVL1
+ 3722 0004 12000000 		.4byte	.LVL2
+ 3723 0008 0100     		.2byte	0x1
+ 3724 000a 50       		.byte	0x50
+ 3725 000b 00000000 		.4byte	0
+ 3726 000f 00000000 		.4byte	0
+ 3727              	.LLST1:
+ 3728 0013 00000000 		.4byte	.LVL7
+ 3729 0017 0A000000 		.4byte	.LVL8
+ 3730 001b 0100     		.2byte	0x1
+ 3731 001d 50       		.byte	0x50
+ 3732 001e 0A000000 		.4byte	.LVL8
+ 3733 0022 0E000000 		.4byte	.LVL9
+ 3734 0026 0100     		.2byte	0x1
+ 3735 0028 50       		.byte	0x50
+ 3736 0029 00000000 		.4byte	0
+ 3737 002d 00000000 		.4byte	0
+ 3738              	.LLST2:
+ 3739 0031 00000000 		.4byte	.LVL31
+ 3740 0035 05000000 		.4byte	.LVL32-1
+ 3741 0039 0100     		.2byte	0x1
+ 3742 003b 50       		.byte	0x50
+ 3743 003c 05000000 		.4byte	.LVL32-1
+ 3744 0040 50000000 		.4byte	.LFE66
+ 3745 0044 0400     		.2byte	0x4
+ 3746 0046 F3       		.byte	0xf3
+ 3747 0047 01       		.uleb128 0x1
+ 3748 0048 50       		.byte	0x50
+ 3749 0049 9F       		.byte	0x9f
+ 3750 004a 00000000 		.4byte	0
+ 3751 004e 00000000 		.4byte	0
+ 3752              	.LLST3:
+ 3753 0052 C6000000 		.4byte	.LVL42
+ 3754 0056 CA000000 		.4byte	.LVL43
+ 3755 005a 0200     		.2byte	0x2
+ 3756 005c 30       		.byte	0x30
+ 3757 005d 9F       		.byte	0x9f
+ 3758 005e CA000000 		.4byte	.LVL43
+ 3759 0062 34010000 		.4byte	.LVL53
+ 3760 0066 0100     		.2byte	0x1
+ 3761 0068 54       		.byte	0x54
+ 3762 0069 00000000 		.4byte	0
+ 3763 006d 00000000 		.4byte	0
+ 3764              	.LLST4:
+ 3765 0071 6C000000 		.4byte	.LVL83
+ 3766 0075 78000000 		.4byte	.LVL86
+ 3767 0079 0200     		.2byte	0x2
+ 3768 007b 30       		.byte	0x30
+ 3769 007c 9F       		.byte	0x9f
+ 3770 007d 78000000 		.4byte	.LVL86
+ 3771 0081 70020000 		.4byte	.LFE73
+ 3772 0085 0100     		.2byte	0x1
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 80
+
+
+ 3773 0087 55       		.byte	0x55
+ 3774 0088 00000000 		.4byte	0
+ 3775 008c 00000000 		.4byte	0
+ 3776              	.LLST5:
+ 3777 0090 0A000000 		.4byte	.LVL65
+ 3778 0094 0E000000 		.4byte	.LVL66
+ 3779 0098 0200     		.2byte	0x2
+ 3780 009a 30       		.byte	0x30
+ 3781 009b 9F       		.byte	0x9f
+ 3782 009c 0E000000 		.4byte	.LVL66
+ 3783 00a0 78000000 		.4byte	.LVL86
+ 3784 00a4 0100     		.2byte	0x1
+ 3785 00a6 54       		.byte	0x54
+ 3786 00a7 00000000 		.4byte	0
+ 3787 00ab 00000000 		.4byte	0
+ 3788              	.LLST6:
+ 3789 00af EE010000 		.4byte	.LVL126
+ 3790 00b3 01020000 		.4byte	.LVL127-1
+ 3791 00b7 0100     		.2byte	0x1
+ 3792 00b9 50       		.byte	0x50
+ 3793 00ba 0A020000 		.4byte	.LVL129
+ 3794 00be 0D020000 		.4byte	.LVL130-1
+ 3795 00c2 0100     		.2byte	0x1
+ 3796 00c4 50       		.byte	0x50
+ 3797 00c5 00000000 		.4byte	0
+ 3798 00c9 00000000 		.4byte	0
+ 3799              	.LLST7:
+ 3800 00cd C4000000 		.4byte	.LVL90
+ 3801 00d1 D0000000 		.4byte	.LVL91
+ 3802 00d5 0100     		.2byte	0x1
+ 3803 00d7 50       		.byte	0x50
+ 3804 00d8 D6000000 		.4byte	.LVL93
+ 3805 00dc E2000000 		.4byte	.LVL94
+ 3806 00e0 0100     		.2byte	0x1
+ 3807 00e2 50       		.byte	0x50
+ 3808 00e3 E8000000 		.4byte	.LVL96
+ 3809 00e7 F4000000 		.4byte	.LVL97
+ 3810 00eb 0100     		.2byte	0x1
+ 3811 00ed 50       		.byte	0x50
+ 3812 00ee 00000000 		.4byte	0
+ 3813 00f2 00000000 		.4byte	0
+ 3814              		.section	.debug_aranges,"",%progbits
+ 3815 0000 6C000000 		.4byte	0x6c
+ 3816 0004 0200     		.2byte	0x2
+ 3817 0006 00000000 		.4byte	.Ldebug_info0
+ 3818 000a 04       		.byte	0x4
+ 3819 000b 00       		.byte	0
+ 3820 000c 0000     		.2byte	0
+ 3821 000e 0000     		.2byte	0
+ 3822 0010 00000000 		.4byte	.LFB72
+ 3823 0014 64000000 		.4byte	.LFE72-.LFB72
+ 3824 0018 00000000 		.4byte	.LFB63
+ 3825 001c 2C000000 		.4byte	.LFE63-.LFB63
+ 3826 0020 00000000 		.4byte	.LFB64
+ 3827 0024 40000000 		.4byte	.LFE64-.LFB64
+ 3828 0028 00000000 		.4byte	.LFB68
+ 3829 002c 16000000 		.4byte	.LFE68-.LFB68
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 81
+
+
+ 3830 0030 00000000 		.4byte	.LFB69
+ 3831 0034 34000000 		.4byte	.LFE69-.LFB69
+ 3832 0038 00000000 		.4byte	.LFB70
+ 3833 003c 34000000 		.4byte	.LFE70-.LFB70
+ 3834 0040 00000000 		.4byte	.LFB65
+ 3835 0044 14020000 		.4byte	.LFE65-.LFB65
+ 3836 0048 00000000 		.4byte	.LFB66
+ 3837 004c 50000000 		.4byte	.LFE66-.LFB66
+ 3838 0050 00000000 		.4byte	.LFB67
+ 3839 0054 18020000 		.4byte	.LFE67-.LFB67
+ 3840 0058 00000000 		.4byte	.LFB71
+ 3841 005c 16000000 		.4byte	.LFE71-.LFB71
+ 3842 0060 00000000 		.4byte	.LFB73
+ 3843 0064 70020000 		.4byte	.LFE73-.LFB73
+ 3844 0068 00000000 		.4byte	0
+ 3845 006c 00000000 		.4byte	0
+ 3846              		.section	.debug_ranges,"",%progbits
+ 3847              	.Ldebug_ranges0:
+ 3848 0000 00000000 		.4byte	.LFB72
+ 3849 0004 64000000 		.4byte	.LFE72
+ 3850 0008 00000000 		.4byte	.LFB63
+ 3851 000c 2C000000 		.4byte	.LFE63
+ 3852 0010 00000000 		.4byte	.LFB64
+ 3853 0014 40000000 		.4byte	.LFE64
+ 3854 0018 00000000 		.4byte	.LFB68
+ 3855 001c 16000000 		.4byte	.LFE68
+ 3856 0020 00000000 		.4byte	.LFB69
+ 3857 0024 34000000 		.4byte	.LFE69
+ 3858 0028 00000000 		.4byte	.LFB70
+ 3859 002c 34000000 		.4byte	.LFE70
+ 3860 0030 00000000 		.4byte	.LFB65
+ 3861 0034 14020000 		.4byte	.LFE65
+ 3862 0038 00000000 		.4byte	.LFB66
+ 3863 003c 50000000 		.4byte	.LFE66
+ 3864 0040 00000000 		.4byte	.LFB67
+ 3865 0044 18020000 		.4byte	.LFE67
+ 3866 0048 00000000 		.4byte	.LFB71
+ 3867 004c 16000000 		.4byte	.LFE71
+ 3868 0050 00000000 		.4byte	.LFB73
+ 3869 0054 70020000 		.4byte	.LFE73
+ 3870 0058 00000000 		.4byte	0
+ 3871 005c 00000000 		.4byte	0
+ 3872              		.section	.debug_line,"",%progbits
+ 3873              	.Ldebug_line0:
+ 3874 0000 01050000 		.section	.debug_str,"MS",%progbits,1
+ 3874      02009402 
+ 3874      00000201 
+ 3874      FB0E0D00 
+ 3874      01010101 
+ 3875              	.LASF96:
+ 3876 0000 433A5C55 		.ascii	"C:\\Users\\karam\\OneDrive\\Documents\\PSoC Creator"
+ 3876      73657273 
+ 3876      5C6B6172 
+ 3876      616D5C4F 
+ 3876      6E654472 
+ 3877 002e 5C576F72 		.ascii	"\\Workspace01\\Lab_1.cydsn\000"
+ 3877      6B737061 
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 82
+
+
+ 3877      63653031 
+ 3877      5C4C6162 
+ 3877      5F312E63 
+ 3878              	.LASF64:
+ 3879 0047 54696D65 		.ascii	"Timer_ReadStatusRegister\000"
+ 3879      725F5265 
+ 3879      61645374 
+ 3879      61747573 
+ 3879      52656769 
+ 3880              	.LASF89:
+ 3881 0060 50574D5F 		.ascii	"PWM_1_Start\000"
+ 3881      315F5374 
+ 3881      61727400 
+ 3882              	.LASF0:
+ 3883 006c 7369676E 		.ascii	"signed char\000"
+ 3883      65642063 
+ 3883      68617200 
+ 3884              	.LASF54:
+ 3885 0078 73656D61 		.ascii	"semaphore_alphabet\000"
+ 3885      70686F72 
+ 3885      655F616C 
+ 3885      70686162 
+ 3885      657400
+ 3886              	.LASF83:
+ 3887 008b 4C43445F 		.ascii	"LCD_WriteControl\000"
+ 3887      57726974 
+ 3887      65436F6E 
+ 3887      74726F6C 
+ 3887      00
+ 3888              	.LASF76:
+ 3889 009c 4144435F 		.ascii	"ADC_Read32\000"
+ 3889      52656164 
+ 3889      333200
+ 3890              	.LASF2:
+ 3891 00a7 73686F72 		.ascii	"short int\000"
+ 3891      7420696E 
+ 3891      7400
+ 3892              	.LASF73:
+ 3893 00b1 696E7465 		.ascii	"interrupt_StartEx\000"
+ 3893      72727570 
+ 3893      745F5374 
+ 3893      61727445 
+ 3893      7800
+ 3894              	.LASF19:
+ 3895 00c3 73697A65 		.ascii	"sizetype\000"
+ 3895      74797065 
+ 3895      00
+ 3896              	.LASF80:
+ 3897 00cc 5357345F 		.ascii	"SW4_Read\000"
+ 3897      52656164 
+ 3897      00
+ 3898              	.LASF44:
+ 3899 00d5 62656769 		.ascii	"begin\000"
+ 3899      6E00
+ 3900              	.LASF16:
+ 3901 00db 63686172 		.ascii	"char8\000"
+ 3901      3800
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 83
+
+
+ 3902              	.LASF55:
+ 3903 00e1 55415254 		.ascii	"UART_ReadRxStatus\000"
+ 3903      5F526561 
+ 3903      64527853 
+ 3903      74617475 
+ 3903      7300
+ 3904              	.LASF18:
+ 3905 00f3 6C6F6E67 		.ascii	"long double\000"
+ 3905      20646F75 
+ 3905      626C6500 
+ 3906              	.LASF41:
+ 3907 00ff 6D6F6465 		.ascii	"mode\000"
+ 3907      00
+ 3908              	.LASF51:
+ 3909 0104 6D6F7273 		.ascii	"morsetottimespace\000"
+ 3909      65746F74 
+ 3909      74696D65 
+ 3909      73706163 
+ 3909      6500
+ 3910              	.LASF34:
+ 3911 0116 6B657970 		.ascii	"keypad\000"
+ 3911      616400
+ 3912              	.LASF27:
+ 3913 011d 76616C75 		.ascii	"value\000"
+ 3913      6500
+ 3914              	.LASF81:
+ 3915 0123 6973725F 		.ascii	"isr_StartEx\000"
+ 3915      53746172 
+ 3915      74457800 
+ 3916              	.LASF92:
+ 3917 012f 55415254 		.ascii	"UART_PutString\000"
+ 3917      5F507574 
+ 3917      53747269 
+ 3917      6E6700
+ 3918              	.LASF78:
+ 3919 013e 5357325F 		.ascii	"SW2_Read\000"
+ 3919      52656164 
+ 3919      00
+ 3920              	.LASF11:
+ 3921 0147 75696E74 		.ascii	"uint8_t\000"
+ 3921      385F7400 
+ 3922              	.LASF91:
+ 3923 014f 55415254 		.ascii	"UART_Start\000"
+ 3923      5F537461 
+ 3923      727400
+ 3924              	.LASF21:
+ 3925 015a 75617274 		.ascii	"uart_rx_Handler\000"
+ 3925      5F72785F 
+ 3925      48616E64 
+ 3925      6C657200 
+ 3926              	.LASF13:
+ 3927 016a 75696E74 		.ascii	"uint8\000"
+ 3927      3800
+ 3928              	.LASF50:
+ 3929 0170 6D6F7273 		.ascii	"morseint\000"
+ 3929      65696E74 
+ 3929      00
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 84
+
+
+ 3930              	.LASF48:
+ 3931 0179 666F726D 		.ascii	"formmot\000"
+ 3931      6D6F7400 
+ 3932              	.LASF23:
+ 3933 0181 5357315F 		.ascii	"SW1_Handler\000"
+ 3933      48616E64 
+ 3933      6C657200 
+ 3934              	.LASF90:
+ 3935 018d 414D7578 		.ascii	"AMux_1_Start\000"
+ 3935      5F315F53 
+ 3935      74617274 
+ 3935      00
+ 3936              	.LASF14:
+ 3937 019a 666C6F61 		.ascii	"float\000"
+ 3937      7400
+ 3938              	.LASF40:
+ 3939 01a0 74616168 		.ascii	"taah\000"
+ 3939      00
+ 3940              	.LASF8:
+ 3941 01a5 6C6F6E67 		.ascii	"long long int\000"
+ 3941      206C6F6E 
+ 3941      6720696E 
+ 3941      7400
+ 3942              	.LASF24:
+ 3943 01b3 5357325F 		.ascii	"SW2_Handler\000"
+ 3943      48616E64 
+ 3943      6C657200 
+ 3944              	.LASF39:
+ 3945 01bf 636F756E 		.ascii	"countTime\000"
+ 3945      7454696D 
+ 3945      6500
+ 3946              	.LASF85:
+ 3947 01c9 54696D65 		.ascii	"Timer_Start\000"
+ 3947      725F5374 
+ 3947      61727400 
+ 3948              	.LASF6:
+ 3949 01d5 6C6F6E67 		.ascii	"long int\000"
+ 3949      20696E74 
+ 3949      00
+ 3950              	.LASF25:
+ 3951 01de 5357335F 		.ascii	"SW3_Handler\000"
+ 3951      48616E64 
+ 3951      6C657200 
+ 3952              	.LASF29:
+ 3953 01ea 6D6F6469 		.ascii	"modifymorsecode\000"
+ 3953      66796D6F 
+ 3953      72736563 
+ 3953      6F646500 
+ 3954              	.LASF53:
+ 3955 01fa 72784461 		.ascii	"rxData_char\000"
+ 3955      74615F63 
+ 3955      68617200 
+ 3956              	.LASF4:
+ 3957 0206 5F5F7569 		.ascii	"__uint8_t\000"
+ 3957      6E74385F 
+ 3957      7400
+ 3958              	.LASF32:
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 85
+
+
+ 3959 0210 5357345F 		.ascii	"SW4_Handler\000"
+ 3959      48616E64 
+ 3959      6C657200 
+ 3960              	.LASF65:
+ 3961 021c 56444143 		.ascii	"VDAC8_1_SetValue\000"
+ 3961      385F315F 
+ 3961      53657456 
+ 3961      616C7565 
+ 3961      00
+ 3962              	.LASF77:
+ 3963 022d 4144435F 		.ascii	"ADC_CountsTo_mVolts\000"
+ 3963      436F756E 
+ 3963      7473546F 
+ 3963      5F6D566F 
+ 3963      6C747300 
+ 3964              	.LASF43:
+ 3965 0241 6C696768 		.ascii	"light\000"
+ 3965      7400
+ 3966              	.LASF61:
+ 3967 0247 50696E5F 		.ascii	"Pin_2_Write\000"
+ 3967      325F5772 
+ 3967      69746500 
+ 3968              	.LASF69:
+ 3969 0253 50574D5F 		.ascii	"PWM_1_WriteCompare1\000"
+ 3969      315F5772 
+ 3969      69746543 
+ 3969      6F6D7061 
+ 3969      72653100 
+ 3970              	.LASF68:
+ 3971 0267 50574D5F 		.ascii	"PWM_1_WriteCompare2\000"
+ 3971      315F5772 
+ 3971      69746543 
+ 3971      6F6D7061 
+ 3971      72653200 
+ 3972              	.LASF30:
+ 3973 027b 4D4F5253 		.ascii	"MORSE\000"
+ 3973      4500
+ 3974              	.LASF57:
+ 3975 0281 4C43445F 		.ascii	"LCD_PrintString\000"
+ 3975      5072696E 
+ 3975      74537472 
+ 3975      696E6700 
+ 3976              	.LASF72:
+ 3977 0291 6B657970 		.ascii	"keypadScan\000"
+ 3977      61645363 
+ 3977      616E00
+ 3978              	.LASF1:
+ 3979 029c 756E7369 		.ascii	"unsigned char\000"
+ 3979      676E6564 
+ 3979      20636861 
+ 3979      7200
+ 3980              	.LASF58:
+ 3981 02aa 55415254 		.ascii	"UART_ReadRxData\000"
+ 3981      5F526561 
+ 3981      64527844 
+ 3981      61746100 
+ 3982              	.LASF63:
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 86
+
+
+ 3983 02ba 50696E5F 		.ascii	"Pin_4_Write\000"
+ 3983      345F5772 
+ 3983      69746500 
+ 3984              	.LASF9:
+ 3985 02c6 6C6F6E67 		.ascii	"long long unsigned int\000"
+ 3985      206C6F6E 
+ 3985      6720756E 
+ 3985      7369676E 
+ 3985      65642069 
+ 3986              	.LASF26:
+ 3987 02dd 6D6F7273 		.ascii	"morse\000"
+ 3987      6500
+ 3988              	.LASF10:
+ 3989 02e3 756E7369 		.ascii	"unsigned int\000"
+ 3989      676E6564 
+ 3989      20696E74 
+ 3989      00
+ 3990              	.LASF28:
+ 3991 02f0 6C657474 		.ascii	"letter\000"
+ 3991      657200
+ 3992              	.LASF49:
+ 3993 02f7 6D6F7273 		.ascii	"morsecode\000"
+ 3993      65636F64 
+ 3993      6500
+ 3994              	.LASF33:
+ 3995 0301 6C636463 		.ascii	"lcdcount\000"
+ 3995      6F756E74 
+ 3995      00
+ 3996              	.LASF93:
+ 3997 030a 55415254 		.ascii	"UART_GetChar\000"
+ 3997      5F476574 
+ 3997      43686172 
+ 3997      00
+ 3998              	.LASF31:
+ 3999 0317 73746174 		.ascii	"status\000"
+ 3999      757300
+ 4000              	.LASF45:
+ 4001 031e 72786265 		.ascii	"rxbegin\000"
+ 4001      67696E00 
+ 4002              	.LASF17:
+ 4003 0326 63686172 		.ascii	"char\000"
+ 4003      00
+ 4004              	.LASF99:
+ 4005 032b 6D61696E 		.ascii	"main\000"
+ 4005      00
+ 4006              	.LASF71:
+ 4007 0330 7374726C 		.ascii	"strlen\000"
+ 4007      656E00
+ 4008              	.LASF12:
+ 4009 0337 696E7433 		.ascii	"int32_t\000"
+ 4009      325F7400 
+ 4010              	.LASF79:
+ 4011 033f 5357335F 		.ascii	"SW3_Read\000"
+ 4011      52656164 
+ 4011      00
+ 4012              	.LASF3:
+ 4013 0348 73686F72 		.ascii	"short unsigned int\000"
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 87
+
+
+ 4013      7420756E 
+ 4013      7369676E 
+ 4013      65642069 
+ 4013      6E7400
+ 4014              	.LASF37:
+ 4015 035b 636F756E 		.ascii	"countTimesw2\000"
+ 4015      7454696D 
+ 4015      65737732 
+ 4015      00
+ 4016              	.LASF38:
+ 4017 0368 636F756E 		.ascii	"countTimesw3\000"
+ 4017      7454696D 
+ 4017      65737733 
+ 4017      00
+ 4018              	.LASF87:
+ 4019 0375 4144435F 		.ascii	"ADC_Start\000"
+ 4019      53746172 
+ 4019      7400
+ 4020              	.LASF42:
+ 4021 037f 5F426F6F 		.ascii	"_Bool\000"
+ 4021      6C00
+ 4022              	.LASF46:
+ 4023 0385 7278656E 		.ascii	"rxend\000"
+ 4023      6400
+ 4024              	.LASF66:
+ 4025 038b 5357315F 		.ascii	"SW1_Read\000"
+ 4025      52656164 
+ 4025      00
+ 4026              	.LASF95:
+ 4027 0394 6D61696E 		.ascii	"main.c\000"
+ 4027      2E6300
+ 4028              	.LASF75:
+ 4029 039b 414D7578 		.ascii	"AMux_1_FastSelect\000"
+ 4029      5F315F46 
+ 4029      61737453 
+ 4029      656C6563 
+ 4029      7400
+ 4030              	.LASF7:
+ 4031 03ad 6C6F6E67 		.ascii	"long unsigned int\000"
+ 4031      20756E73 
+ 4031      69676E65 
+ 4031      6420696E 
+ 4031      7400
+ 4032              	.LASF15:
+ 4033 03bf 646F7562 		.ascii	"double\000"
+ 4033      6C6500
+ 4034              	.LASF59:
+ 4035 03c6 4C43445F 		.ascii	"LCD_PutChar\000"
+ 4035      50757443 
+ 4035      68617200 
+ 4036              	.LASF84:
+ 4037 03d2 6B657970 		.ascii	"keypadInit\000"
+ 4037      6164496E 
+ 4037      697400
+ 4038              	.LASF35:
+ 4039 03dd 49544D5F 		.ascii	"ITM_RxBuffer\000"
+ 4039      52784275 
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 88
+
+
+ 4039      66666572 
+ 4039      00
+ 4040              	.LASF36:
+ 4041 03ea 636F756E 		.ascii	"count\000"
+ 4041      7400
+ 4042              	.LASF5:
+ 4043 03f0 5F5F696E 		.ascii	"__int32_t\000"
+ 4043      7433325F 
+ 4043      7400
+ 4044              	.LASF82:
+ 4045 03fa 4C43445F 		.ascii	"LCD_Start\000"
+ 4045      53746172 
+ 4045      7400
+ 4046              	.LASF56:
+ 4047 0404 4C43445F 		.ascii	"LCD_Position\000"
+ 4047      506F7369 
+ 4047      74696F6E 
+ 4047      00
+ 4048              	.LASF52:
+ 4049 0411 72784461 		.ascii	"rxData\000"
+ 4049      746100
+ 4050              	.LASF88:
+ 4051 0418 4144435F 		.ascii	"ADC_StartConvert\000"
+ 4051      53746172 
+ 4051      74436F6E 
+ 4051      76657274 
+ 4051      00
+ 4052              	.LASF22:
+ 4053 0429 70696E73 		.ascii	"pinsWrite\000"
+ 4053      57726974 
+ 4053      6500
+ 4054              	.LASF60:
+ 4055 0433 50696E5F 		.ascii	"Pin_1_Write\000"
+ 4055      315F5772 
+ 4055      69746500 
+ 4056              	.LASF67:
+ 4057 043f 696E7465 		.ascii	"interrupt_Stop\000"
+ 4057      72727570 
+ 4057      745F5374 
+ 4057      6F7000
+ 4058              	.LASF47:
+ 4059 044e 666C6167 		.ascii	"flag\000"
+ 4059      00
+ 4060              	.LASF20:
+ 4061 0453 6E756D31 		.ascii	"num1\000"
+ 4061      00
+ 4062              	.LASF94:
+ 4063 0458 474E5520 		.ascii	"GNU C11 5.4.1 20160609 (release) [ARM/embedded-5-br"
+ 4063      43313120 
+ 4063      352E342E 
+ 4063      31203230 
+ 4063      31363036 
+ 4064 048b 616E6368 		.ascii	"anch revision 237715] -mcpu=cortex-m3 -mthumb -g -O"
+ 4064      20726576 
+ 4064      6973696F 
+ 4064      6E203233 
+ 4064      37373135 
+ARM GAS  C:\Users\karam\AppData\Local\Temp\cclRBQQI.s 			page 89
+
+
+ 4065 04be 67202D66 		.ascii	"g -ffunction-sections -ffat-lto-objects\000"
+ 4065      66756E63 
+ 4065      74696F6E 
+ 4065      2D736563 
+ 4065      74696F6E 
+ 4066              	.LASF74:
+ 4067 04e6 43794465 		.ascii	"CyDelay\000"
+ 4067      6C617900 
+ 4068              	.LASF97:
+ 4069 04ee 70616972 		.ascii	"pair\000"
+ 4069      00
+ 4070              	.LASF98:
+ 4071 04f3 736F756E 		.ascii	"soundPlay\000"
+ 4071      64506C61 
+ 4071      7900
+ 4072              	.LASF62:
+ 4073 04fd 50696E5F 		.ascii	"Pin_3_Write\000"
+ 4073      335F5772 
+ 4073      69746500 
+ 4074              	.LASF70:
+ 4075 0509 55415254 		.ascii	"UART_PutChar\000"
+ 4075      5F507574 
+ 4075      43686172 
+ 4075      00
+ 4076              	.LASF86:
+ 4077 0516 56444143 		.ascii	"VDAC8_1_Start\000"
+ 4077      385F315F 
+ 4077      53746172 
+ 4077      7400
+ 4078              		.ident	"GCC: (GNU Tools for ARM Embedded Processors) 5.4.1 20160609 (release) [ARM/embedded-5-bran
