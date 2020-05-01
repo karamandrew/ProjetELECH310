@@ -18,15 +18,15 @@ int count=0;
 int countTimesw2=0;
 int countTimesw3=0;
 int countTime=0;
-int ti=10000;
-int taah=30000;
+int ti=10000; //Value morse code
+int taah=30000; //Value morse code
 float vec[100];
 _Bool mode;
 _Bool light;
 _Bool begin=1;
 _Bool rxbegin=0, rxend=0, flag=0;
 char *mot;
-char formmot[8];
+char formmot[8]; // Char of length 8
 int morsecode[4]={0,0,0,0};
 int morseint=0, k=0;
 int morsetottimespace=0;
@@ -36,7 +36,11 @@ struct pair{
     char let;
     double num;
     double num1;
-};
+};// Classe pair qui prend la lettre, angle drapeau 1 et angle drapeau 2
+
+/* Arbitrary semaphore code encoding*/
+
+// On crée on objet pair
 struct pair semaphore_alphabet[26] = {{'a',0,0},
   {'b',0,45},
   {'c',0,90},
@@ -64,8 +68,9 @@ struct pair semaphore_alphabet[26] = {{'a',0,0},
   {'y',180,180},
   {'z',158,158}};
 
-void pinsWrite(int value){
-    if (light){
+// Method pour pas toujours devoir les écrire
+void pinsWrite(int value){// 1 ou 0
+    if (light){ // Si lumière, value se remet à 0
         value=0;
     }
     Pin_1_Write(value);
@@ -75,16 +80,17 @@ void pinsWrite(int value){
 }
 
 void soundPlay(){
-    if (count==99){
+    if (count==99){ // O de base, sert a compter que élément de la liste vec on va jouer.
         count=0;
     }
-    Timer_ReadStatusRegister();
-    VDAC8_1_SetValue(vec[count]*128);
+    Timer_ReadStatusRegister(); // On lit la valeur toutes les 50 milisecondes
+    VDAC8_1_SetValue(vec[count]*128); // 128 module l'amplitude plus haut
     count++;
 }
 
-void morse(char letter){
-    morsecode[0]=0;
+/* Encode each letter into 4 or more morse character */
+void morse(char letter){ // Ne retourne rien, modifie juste la variable globale morsecode
+    morsecode[0]=0; // Morse code is list of 4 values, we initiate all the values to zero. So, a word is made of letter, each made of a list of 4 values
     morsecode[1]=0;
     morsecode[2]=0;
     morsecode[3]=0;
@@ -223,58 +229,62 @@ void morse(char letter){
         morsecode[3]=ti;
     }
 }
-void modifymorsecode(char letter){
-    morse(letter);
-    morsecode[1]+=morsecode[0];
+
+// Ask explanations for this!
+void modifymorsecode(char letter){ // Char letter= mot[morseint] 
+    morse(letter); // letter= mot[0,1,...] It 
+    morsecode[1]+=morsecode[0]; //On additionne le temps de chaque lettre 
     morsecode[2]+=morsecode[1];
     morsecode[3]+=morsecode[2];
-    if (morsecode[1]<=morsecode[0]){    morsetottimespace=0;
+    // Autre variable: morsetottimespace, on veut savoir combien d'emplacement total il y a dans la lettre
+    if (morsecode[1]<=morsecode[0]){    morsetottimespace=0; 
     }else if(morsecode[2]<=morsecode[1]){   morsetottimespace=5000;
     }else if(morsecode[3]<=morsecode[2]){   morsetottimespace=10000;
     }else { morsetottimespace=15000;}
 }
 
 CY_ISR( MORSE ){
-    if (begin){
-        modifymorsecode(mot[morseint]);
+    if (begin){ // Se fait appeler quan on a finit une lettre
+        modifymorsecode(mot[morseint]);// mot is char of length 8 and morseint is equal to 0 --> first element of the char
+        // Traduit le morse dans l'uart pour le user screen
         if(morsecode[0]==ti) UART_PutChar('.');
         if(morsecode[0]==taah) UART_PutChar('-');
-        if(morsecode[1]-morsecode[0]==ti) UART_PutChar('.');
+        if(morsecode[1]-morsecode[0]==ti) UART_PutChar('.'); // Soustraire la valeur précédente car on a additionné avant
         if(morsecode[1]-morsecode[0]==taah) UART_PutChar('-');
         if(morsecode[2]-morsecode[1]==ti) UART_PutChar('.');
         if(morsecode[2]-morsecode[1]==taah) UART_PutChar('-');
         if(morsecode[3]-morsecode[2]==ti) UART_PutChar('.');
         if(morsecode[3]-morsecode[2]==taah) UART_PutChar('-');
         UART_PutChar(' ');
-        
+        // Ducoup les drapeaux bougent que lorsqu'on passe à la lettre suivante.
         //if(light){
             for (int ba=0; ba<26; ba++){
-                if (semaphore_alphabet[ba].let==mot[morseint]){
-                    PWM_1_WriteCompare2((int)((semaphore_alphabet[ba].num/1.8)+26));
+                if (semaphore_alphabet[ba].let==mot[morseint]){//si la lettre de l'élément 
+                    PWM_1_WriteCompare2((int)((semaphore_alphabet[ba].num/1.8)+26));// offset de 26, et nonus on va de 26 à 126
                     PWM_1_WriteCompare1((int)((semaphore_alphabet[ba].num1/1.8)+26));
                 }
             }
         
         //}
     }
-    begin = 0;
+    begin = 0; // Once we did this, we set begin back to 0
     
-    if(countTime>morsetottimespace+morsecode[3]){
-        Timer_ReadStatusRegister();
-        if(countTime>morsetottimespace+morsecode[3]+20000){
+    if(countTime>morsetottimespace+morsecode[3]){//Si contime est plus grand que l'ensemble des valeurs et de l'espace entre les valuers d'un mot, ca veut dire qu'on a fait tout une lettre
+        Timer_ReadStatusRegister(); // Permet de doser le timing? 
+        if(countTime>morsetottimespace+morsecode[3]+20000){ // countime continue jusqu'a ce qu'on ai ajouté le temps d'un espace entre deux lettre
             begin=1;
             countTime=0;
-            morseint++;
-            if(strlen(mot)==(morseint)){
+            morseint++; // Deuxième lettre du mot
+            if(strlen(mot)==(morseint)){ // Fin du mOT
                 morseint=0;
-                rxend=1;
-                UART_PutChar('\n');
+                rxend=1;//  We active the end of the rx?
+                UART_PutChar('\n');// On passe à la ligne
                 //memset(formmot, 0, strlen(formmot));
-                interrupt_Stop();
+                interrupt_Stop();// On sort de l'interupt MORSE
             }
         }
     }
-    else{
+    else{ // Si on a pas fini la lettre, on est ici
         if(countTime<morsecode[0] || ((countTime>(morsecode[0]+5000)) && (countTime<morsecode[1]+5000)) || (countTime>morsecode[1]+10000 && countTime<morsecode[2]+10000) || (countTime>morsecode[2]+15000 && countTime<morsecode[3]+15000)){           
             soundPlay();
         }
@@ -356,7 +366,7 @@ int main(void)
     isr_StartEx(uart_rx_Handler);
     CyGlobalIntEnable; /* Enable global interrupts. */
     for(int i=0; i<=99; i++){
-       vec[i]= sin(i*2*3.14159265/50)+1;
+       vec[i]= sin(i*2*3.14159265/50)+1; // Divise une période de sinus (2pi) en 100 vecteurs
     }
     /* Place your initialization/startup code here (e.g. MyInst_Start()) */
     LCD_Start();
@@ -370,28 +380,28 @@ int main(void)
     PWM_1_Start();
     AMux_1_Start();
     UART_Start();
-    int lcdcount=0;
+    int lcdcount=0; // Why here?
 
-    UART_PutString("Hello\n");
+    UART_PutString("Hello\n"); // Why here ?
     UART_GetChar();
     for(;;)
     {
-        if(rxbegin){
+        if(rxbegin){ //Boolean, initially = 0, pass a 1 lorsque l'uart est lancé
             
             rxbegin=0;
-            mot=formmot;
-            interrupt_StartEx(MORSE);
+            mot=formmot; // formmor= char of length 8
+            interrupt_StartEx(MORSE);// We go to morse interrupt
         }
-        if(rxend){
-            while (k>0){
+        if(rxend){ // mot fini
+            while (k>0){// On remoet formot a 0
             formmot[k]=_NULL;
             k--;
             }
             rxend=0;
         }
         
-        if(keypadScan() != 'z'){
-            char keypad=keypadScan();
+        if(keypadScan() != 'z'){// on appuye suru une touche
+            char keypad=keypadScan();// on récupère la valeur
             if(keypad == '*'){
                 mot="alexis";
                 interrupt_StartEx(MORSE);
@@ -405,10 +415,10 @@ int main(void)
                 if(lcdcount==16){LCD_Position(0,0);}
                 lcdcount++;
                 LCD_PutChar(keypad);
-                CyDelay(80);
+                CyDelay(80);// Ca s'imprime trop vite sinon
             }
         }
-        AMux_1_FastSelect(0);
+        AMux_1_FastSelect(0);//photosensor a l'adc
         if(ADC_CountsTo_mVolts(ADC_Read32())<1000){
             light=0;
         }
@@ -469,11 +479,11 @@ int main(void)
         }
         //SW4
         if(SW4_Read()){
-            mode=!mode;
-            for(;SW4_Read();){}
+            mode=!mode; // Boolean defines which flag will move
+            for(;SW4_Read();){} //La boucle principale est bloquée tant qu'on est appué, et permet de pas changer plusieurs fois
         }
         AMux_1_FastSelect(1);
-        float val= (ADC_CountsTo_mVolts(ADC_Read32())/5.106)/10+26;
+        float val= (ADC_CountsTo_mVolts(ADC_Read32())/51.06)/10+26;
         if(light){
             if(mode){
                 PWM_1_WriteCompare2(val);
