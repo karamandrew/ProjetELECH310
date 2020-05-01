@@ -79,7 +79,7 @@ void soundPlay(){
         count=0;
     }
     Timer_ReadStatusRegister();
-    VDAC8_1_SetValue(vec[count]*128);
+    VDAC8_1_SetValue(vec[count]*128); //*128 to adapt the magnitude
     count++;
 }
 
@@ -247,21 +247,21 @@ CY_ISR( MORSE ){
         if(morsecode[3]-morsecode[2]==taah) UART_PutChar('-');
         UART_PutChar(' ');
         
-        //if(light){
+        if(light){
             for (int ba=0; ba<26; ba++){
                 if (semaphore_alphabet[ba].let==mot[morseint]){
-                    PWM_1_WriteCompare2((int)((semaphore_alphabet[ba].num/1.8)+26));
+                    PWM_1_WriteCompare2((int)((semaphore_alphabet[ba].num/1.8)+26)); //flags move from 26(0°) to 126(180°)
                     PWM_1_WriteCompare1((int)((semaphore_alphabet[ba].num1/1.8)+26));
                 }
             }
         
-        //}
+        }
     }
     begin = 0;
     
     if(countTime>morsetottimespace+morsecode[3]){
         Timer_ReadStatusRegister();
-        if(countTime>morsetottimespace+morsecode[3]+20000){
+        if(countTime>morsetottimespace+morsecode[3]+20000){ //20000 represent the space between 2 letters
             begin=1;
             countTime=0;
             morseint++;
@@ -269,7 +269,6 @@ CY_ISR( MORSE ){
                 morseint=0;
                 rxend=1;
                 UART_PutChar('\n');
-                //memset(formmot, 0, strlen(formmot));
                 interrupt_Stop();
             }
         }
@@ -317,14 +316,6 @@ CY_ISR( SW3_Handler ){
     }
 }
 
-CY_ISR( SW4_Handler ){
-    soundPlay();
-    if (!SW1_Read()){
-        pinsWrite(0);
-        interrupt_Stop();
-    }
-}
-
 CY_ISR ( uart_rx_Handler ) {
 uint8_t status = 0;
 do{
@@ -361,19 +352,19 @@ int main(void)
     /* Place your initialization/startup code here (e.g. MyInst_Start()) */
     LCD_Start();
     LCD_ClearDisplay();
-    //_Bool allum=1;
     keypadInit();
     Timer_Start();
     VDAC8_1_Start();
     ADC_Start();
     ADC_StartConvert();
-    PWM_1_Start();
     AMux_1_Start();
+    PWM_1_Start();
     UART_Start();
     int lcdcount=0;
 
     UART_PutString("Hello\n");
     UART_GetChar();
+
     for(;;)
     {
         if(rxbegin){
@@ -416,32 +407,6 @@ int main(void)
             light=1;
         }
         
-        /* 4.5
-        overflow=0x80 & Timer_ReadStatusRegister();
-        if(overflow){
-            count++;
-            if (count==1000){
-                if(allum){
-                    Pin_4_Write(1);
-                }
-                if(!allum){
-                    Pin_4_Write(0);
-                }
-                allum=!allum;
-                count=0;
-            }
-        }*/
-        /* 4.6
-        overflow=0x80 & Timer_ReadStatusRegister();
-        if(overflow){
-            if (count==99){
-                count=0;
-            }
-            VDAC8_1_SetValue(vec[count]*128);
-            count++;
-        }
-        */
-        
         //SW1 HANDLER
         if(SW1_Read()){
             pinsWrite(1);
@@ -469,12 +434,13 @@ int main(void)
         }
         //SW4
         if(SW4_Read()){
-            mode=!mode;
-            for(;SW4_Read();){}
+            mode=!mode; //define if flag 1 or two moves with the potentiometer
+            for(;SW4_Read();){} //prevent mode to change too fast, blocks the main for loop
         }
-        AMux_1_FastSelect(1);
-        float val= (ADC_CountsTo_mVolts(ADC_Read32())/5.106)/10+26;
+        
         if(light){
+            AMux_1_FastSelect(1);
+            float val= (ADC_CountsTo_mVolts(ADC_Read32())/51.06)+26;
             if(mode){
                 PWM_1_WriteCompare2(val);
             }
